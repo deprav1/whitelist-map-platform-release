@@ -77,14 +77,7 @@ const state = {
   selectedId: null,
   searchDebounceId: null,
   useTiles: true,
-  filters: {
-    search: "",
-    category: "all",
-    problem: "all",
-    operator: "all",
-    service: "all",
-    freshness: "all"
-  }
+  filters: defaultFilters()
 };
 
 const categoryMeta = {
@@ -101,6 +94,13 @@ const categoryWeight = {
   "partial-connectivity": 2,
   "needs-verification": 1,
   restored: 0
+};
+
+const freshnessWeight = {
+  now: 3,
+  today: 2,
+  recent: 1,
+  stale: 0
 };
 
 const freshnessLabels = {
@@ -134,6 +134,22 @@ const searchAliases = {
 };
 
 const $ = (selector) => document.querySelector(selector);
+
+function defaultFilters() {
+  return {
+    search: "",
+    category: "all",
+    problem: "all",
+    operator: "all",
+    service: "all",
+    freshness: "all"
+  };
+}
+
+function announce(message) {
+  const liveRegion = $("#liveRegion");
+  if (liveRegion) liveRegion.textContent = message;
+}
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -191,6 +207,10 @@ function normalizeText(value) {
 
 function sortedReports(reports) {
   return [...reports].sort((a, b) => new Date(b.checked_at) - new Date(a.checked_at));
+}
+
+function publishedReports() {
+  return sortedReports(state.data.reports || []).filter((report) => !report.status || report.status === "published");
 }
 
 async function loadData() {
@@ -272,17 +292,12 @@ function writeFiltersToUrl() {
 }
 
 function setupFilters() {
-  const reports = state.data.reports;
+  const reports = publishedReports();
   fillSelect($("#problemFilter"), unique(reports.map((report) => report.problem_type)), "Все проблемы");
   fillSelect($("#operatorFilter"), unique(reports.map((report) => report.operator)), "Все операторы");
   fillSelect($("#serviceFilter"), unique(reports.flatMap((report) => report.checked_services || [])), "Все сервисы");
 
-  $("#searchInput").value = state.filters.search;
-  $("#problemFilter").value = state.filters.problem;
-  $("#operatorFilter").value = state.filters.operator;
-  $("#serviceFilter").value = state.filters.service;
-  $("#freshnessFilter").value = state.filters.freshness;
-  updateQuickFilters();
+  syncFilterControls();
 
   $("#searchInput").addEventListener("input", (event) => {
     state.filters.search = event.target.value.trim();
@@ -294,7 +309,7 @@ function setupFilters() {
   document.querySelectorAll(".quick-filter").forEach((button) => {
     button.addEventListener("click", () => {
       state.filters.category = button.dataset.category || "all";
-      updateQuickFilters();
+      syncFilterControls();
       render({ fit: true });
     });
   });
@@ -307,32 +322,70 @@ function setupFilters() {
   });
 
   $("#resetFiltersButton").addEventListener("click", () => {
-    state.filters = { search: "", category: "all", problem: "all", operator: "all", service: "all", freshness: "all" };
-    $("#searchInput").value = "";
-    $("#problemFilter").value = "all";
-    $("#operatorFilter").value = "all";
-    $("#serviceFilter").value = "all";
-    $("#freshnessFilter").value = "all";
-    updateQuickFilters();
-    render({ fit: true });
+    resetAllFilters();
   });
 
   $("#resetMapButton").addEventListener("click", () => {
     fitMap(getFilteredReports(), true);
   });
 
+  $("#resetContextButton").addEventListener("click", resetAllFilters);
   $("#shareButton").addEventListener("click", shareCurrentView);
   $("#tileModeButton").addEventListener("click", toggleTileMode);
   $("#clearLocalButton").addEventListener("click", clearLocalData);
+  $("#reportButton").addEventListener("click", openReportDialog);
+  $("#drawerReportButton").addEventListener("click", openReportDialog);
+  $("#aboutDataButton").addEventListener("click", () => openDialog($("#aboutDialog")));
+  $("#copyDraftButton").addEventListener("click", copyReportDraft);
+  document.querySelectorAll("#reportDraftForm input, #reportDraftForm select, #reportDraftForm textarea").forEach((field) => {
+    field.addEventListener("input", updateDraftOutput);
+    field.addEventListener("change", updateDraftOutput);
+  });
 
   $("#showMapTab").addEventListener("click", () => setMobileView("map"));
   $("#showListTab").addEventListener("click", () => setMobileView("list"));
   updateTileModeButton();
 }
 
+function syncFilterControls() {
+  $("#searchInput").value = state.filters.search;
+  syncSelectFilter("problem", "#problemFilter");
+  syncSelectFilter("operator", "#operatorFilter");
+  syncSelectFilter("service", "#serviceFilter");
+  syncSelectFilter("freshness", "#freshnessFilter");
+  updateQuickFilters();
+}
+
+function syncSelectFilter(key, selector) {
+  const element = $(selector);
+  const hasValue = [...element.options].some((option) => option.value === state.filters[key]);
+  if (!hasValue) state.filters[key] = "all";
+  element.value = state.filters[key];
+}
+
+function resetAllFilters() {
+  state.filters = defaultFilters();
+  syncFilterControls();
+  render({ fit: true });
+  announce("Фильтры сброшены");
+}
+
+function clearFilter(key) {
+  state.filters[key] = key === "search" ? "" : "all";
+  syncFilterControls();
+  render({ fit: true });
+  announce("Фильтр снят");
+}
+
 function updateQuickFilters() {
-  document.querySelectorAll(".quick-filter").forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.category === state.filters.category);
+  const buttons = [...document.querySelectorAll(".quick-filter")];
+  if (!buttons.some((button) => button.dataset.category === state.filters.category)) {
+    state.filters.category = "all";
+  }
+  buttons.forEach((button) => {
+    const isActive = button.dataset.category === state.filters.category;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
   });
 }
 
@@ -341,9 +394,69 @@ function setMobileView(view) {
   document.body.classList.toggle("show-list", view === "list");
   $("#showMapTab").classList.toggle("is-active", view === "map");
   $("#showListTab").classList.toggle("is-active", view === "list");
+  $("#showMapTab").setAttribute("aria-selected", String(view === "map"));
+  $("#showListTab").setAttribute("aria-selected", String(view === "list"));
   if (view === "map" && state.map) {
     setTimeout(() => state.map.invalidateSize(), 40);
   }
+}
+
+function openDialog(dialog) {
+  if (dialog.showModal) {
+    dialog.showModal();
+    return;
+  }
+  dialog.setAttribute("open", "");
+}
+
+function openReportDialog() {
+  const reports = getFilteredReports();
+  const latest = reports[0];
+  if (latest) {
+    $("#draftArea").value = latest.city_or_area || latest.region || "";
+    $("#draftOperator").value = latest.operator || "";
+  }
+  updateDraftOutput();
+  openDialog($("#reportDialog"));
+}
+
+function draftValue(selector) {
+  return $(selector).value.trim();
+}
+
+function updateDraftOutput() {
+  const checkedAt = new Date().toLocaleString("ru-RU");
+  const summary = draftValue("#draftSummary");
+  $("#draftSummaryCounter").textContent = `${summary.length} / 500`;
+  const lines = [
+    "WhiteS: черновик наблюдения",
+    `Место: ${draftValue("#draftArea") || "не указано"}`,
+    `Оператор: ${draftValue("#draftOperator") || "не указано"}`,
+    `Тип сети: ${$("#draftNetwork").value}`,
+    `Проблема: ${$("#draftProblem").value}`,
+    `Что проверяли: ${draftValue("#draftServices") || "не указано"}`,
+    `Время проверки: ${checkedAt}`,
+    `Уверенность: ${$("#draftConfidence").value}`,
+    `Комментарий: ${summary || "нет"}`,
+    "",
+    "Без ФИО, телефона, точного адреса, аккаунтов и скриншотов с личными данными."
+  ];
+  $("#draftOutput").value = lines.join("\n");
+}
+
+async function copyReportDraft() {
+  updateDraftOutput();
+  try {
+    await navigator.clipboard.writeText($("#draftOutput").value);
+    $("#copyDraftButton").textContent = "Скопировано";
+    announce("Черновик скопирован");
+  } catch {
+    $("#copyDraftButton").textContent = "Скопируйте вручную";
+    announce("Не удалось скопировать автоматически");
+  }
+  setTimeout(() => {
+    $("#copyDraftButton").textContent = "Скопировать черновик";
+  }, 1400);
 }
 
 function updateTileModeButton() {
@@ -373,6 +486,7 @@ function clearLocalData() {
   localStorage.removeItem(cacheKey);
   localStorage.removeItem(noTilesKey);
   $("#clearLocalButton").textContent = "Очищено";
+  announce("Локальный кэш очищен");
   setTimeout(() => {
     $("#clearLocalButton").textContent = "Очистить";
   }, 1400);
@@ -431,8 +545,7 @@ function addTileLayer() {
 
 function getFilteredReports() {
   const search = normalizeText(state.filters.search);
-  return sortedReports(state.data.reports).filter((report) => {
-    if (report.status && report.status !== "published") return false;
+  return publishedReports().filter((report) => {
     if (state.filters.category !== "all" && report.incident_category !== state.filters.category) return false;
     if (state.filters.problem !== "all" && report.problem_type !== state.filters.problem) return false;
     if (state.filters.operator !== "all" && report.operator !== state.filters.operator) return false;
@@ -621,15 +734,206 @@ function renderSummary(reports) {
   $("#sourceNote").textContent = `Источник: ${state.data.source || state.dataUrl}. Публично показываются только опубликованные модерацией записи.`;
 }
 
+function pluralRu(value, forms) {
+  const absolute = Math.abs(value) % 100;
+  const last = absolute % 10;
+  if (absolute > 10 && absolute < 20) return forms[2];
+  if (last > 1 && last < 5) return forms[1];
+  if (last === 1) return forms[0];
+  return forms[2];
+}
+
+function reportCountLabel(value) {
+  return `${value} ${pluralRu(value, ["отметка", "отметки", "отметок"])}`;
+}
+
+function freshCountLabel(value) {
+  return `${value} ${pluralRu(value, ["свежая", "свежие", "свежих"])}`;
+}
+
+function regionHotspots(reports) {
+  const groups = new Map();
+
+  reports.forEach((report) => {
+    const region = report.region || "Регион не указан";
+    const category = report.incident_category || "needs-verification";
+    const freshness = freshnessFor(report);
+    const confirmation = Math.min(Number(report.confirmation_count) || 0, 12);
+    const score = ((categoryWeight[category] ?? 1) + 1) * ((freshnessWeight[freshness] ?? 0) + 1) + confirmation / 2;
+
+    if (!groups.has(region)) {
+      groups.set(region, {
+        region,
+        count: 0,
+        freshCount: 0,
+        score: 0,
+        worstCategory: category,
+        operators: new Set()
+      });
+    }
+
+    const group = groups.get(region);
+    group.count += 1;
+    group.score += score;
+    group.freshCount += ["now", "today"].includes(freshness) ? 1 : 0;
+    group.operators.add(report.operator);
+    if ((categoryWeight[category] ?? 1) > (categoryWeight[group.worstCategory] ?? 1)) {
+      group.worstCategory = category;
+    }
+  });
+
+  return [...groups.values()].sort((a, b) => b.score - a.score || b.freshCount - a.freshCount || b.count - a.count);
+}
+
+function renderHotspots(reports) {
+  const container = $("#hotspotsList");
+  container.innerHTML = "";
+
+  const hotspots = regionHotspots(reports).slice(0, 3);
+  if (!hotspots.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = "Пока нет опубликованных отметок для сводки.";
+    container.appendChild(empty);
+    return;
+  }
+
+  hotspots.forEach((hotspot) => {
+    const category = categoryMeta[hotspot.worstCategory] || categoryMeta["needs-verification"];
+    const button = document.createElement("button");
+    button.className = "hotspot-card";
+    button.type = "button";
+    button.classList.toggle("is-active", state.filters.search === hotspot.region);
+    button.setAttribute("aria-label", `Показать регион ${hotspot.region}`);
+
+    const main = document.createElement("span");
+    main.className = "hotspot-main";
+
+    const title = document.createElement("strong");
+    title.textContent = hotspot.region;
+    const meta = document.createElement("span");
+    meta.textContent = `${reportCountLabel(hotspot.count)} · ${freshCountLabel(hotspot.freshCount)} · ${unique([...hotspot.operators]).join(", ")}`;
+    main.append(title, meta);
+
+    const badge = document.createElement("span");
+    badge.className = `status-badge ${category.className}`;
+    badge.textContent = category.label;
+
+    button.append(main, badge);
+    button.addEventListener("click", () => {
+      state.filters.search = hotspot.region;
+      syncFilterControls();
+      render({ fit: true });
+      if (window.matchMedia("(max-width: 720px)").matches) setMobileView("map");
+      announce(`Показан регион ${hotspot.region}`);
+    });
+    container.appendChild(button);
+  });
+}
+
+function operatorPulse(reports) {
+  const groups = new Map();
+  reports.forEach((report) => {
+    const operator = report.operator || "Оператор не указан";
+    const category = report.incident_category || "needs-verification";
+    const freshness = freshnessFor(report);
+    const score = ((categoryWeight[category] ?? 1) + 1) * ((freshnessWeight[freshness] ?? 0) + 1);
+
+    if (!groups.has(operator)) {
+      groups.set(operator, { operator, count: 0, score: 0, worstCategory: category });
+    }
+
+    const group = groups.get(operator);
+    group.count += 1;
+    group.score += score;
+    if ((categoryWeight[category] ?? 1) > (categoryWeight[group.worstCategory] ?? 1)) {
+      group.worstCategory = category;
+    }
+  });
+
+  return [...groups.values()].sort((a, b) => b.score - a.score || b.count - a.count || a.operator.localeCompare(b.operator, "ru"));
+}
+
+function renderOperatorPulse(reports) {
+  const container = $("#operatorPulse");
+  container.innerHTML = "";
+
+  operatorPulse(reports).slice(0, 7).forEach((item) => {
+    const category = categoryMeta[item.worstCategory] || categoryMeta["needs-verification"];
+    const button = document.createElement("button");
+    button.className = "operator-chip";
+    button.type = "button";
+    button.classList.toggle("is-active", state.filters.operator === item.operator);
+    button.setAttribute("aria-label", `Показать оператора ${item.operator}`);
+
+    const dot = document.createElement("span");
+    dot.className = `dot ${category.className}`;
+    const label = document.createElement("span");
+    label.textContent = item.operator;
+    const count = document.createElement("small");
+    count.textContent = reportCountLabel(item.count);
+
+    button.append(dot, label, count);
+    button.addEventListener("click", () => {
+      state.filters.operator = item.operator;
+      syncFilterControls();
+      render({ fit: true });
+      announce(`Показан оператор ${item.operator}`);
+    });
+    container.appendChild(button);
+  });
+}
+
+function filterLabels() {
+  const labels = [];
+  if (state.filters.search) labels.push({ key: "search", label: `поиск: ${state.filters.search}` });
+  if (state.filters.category !== "all") labels.push({ key: "category", label: categoryMeta[state.filters.category]?.label || state.filters.category });
+  if (state.filters.problem !== "all") labels.push({ key: "problem", label: state.filters.problem });
+  if (state.filters.operator !== "all") labels.push({ key: "operator", label: state.filters.operator });
+  if (state.filters.service !== "all") labels.push({ key: "service", label: state.filters.service });
+  if (state.filters.freshness !== "all") labels.push({ key: "freshness", label: freshnessLabels[state.filters.freshness] || state.filters.freshness });
+  return labels;
+}
+
+function renderActiveFilters() {
+  const container = $("#activeFilters");
+  const labels = filterLabels();
+  container.innerHTML = "";
+  container.classList.toggle("has-filters", labels.length > 0);
+  labels.forEach((item) => {
+    const chip = document.createElement("button");
+    chip.className = "filter-chip";
+    chip.type = "button";
+    chip.setAttribute("aria-label", `Снять фильтр ${item.label}`);
+    chip.textContent = item.label;
+
+    const remove = document.createElement("span");
+    remove.className = "chip-remove";
+    remove.setAttribute("aria-hidden", "true");
+    remove.textContent = "×";
+    chip.appendChild(remove);
+
+    chip.addEventListener("click", () => clearFilter(item.key));
+    container.appendChild(chip);
+  });
+}
+
 function renderList(reports) {
   const list = $("#reportsList");
   const template = $("#reportTemplate");
   list.innerHTML = "";
 
   if (!reports.length) {
-    const empty = document.createElement("p");
+    const empty = document.createElement("div");
     empty.className = "empty-state";
-    empty.textContent = "По выбранным фильтрам пока нет опубликованных отметок.";
+    const text = document.createElement("p");
+    text.textContent = "По выбранным фильтрам пока нет опубликованных отметок.";
+    const reset = document.createElement("button");
+    reset.className = "ghost-button";
+    reset.type = "button";
+    reset.textContent = "Сбросить фильтры";
+    reset.addEventListener("click", () => $("#resetFiltersButton").click());
+    empty.append(text, reset);
     list.appendChild(empty);
     return;
   }
@@ -644,7 +948,9 @@ function renderList(reports) {
     row.dataset.reportId = report.id;
     row.classList.toggle("is-active", report.id === state.selectedId);
     row.querySelector(".row-status").classList.add(category.className);
+    row.querySelector(".row-status").setAttribute("aria-label", category.label);
     row.querySelector(".row-title").textContent = `${report.city_or_area}, ${report.operator}`;
+    row.querySelector(".row-status-label").textContent = category.label;
     row.querySelector(".row-meta").textContent = `${report.region} · ${report.network_type} · ${formatTime(report.checked_at)} · ${freshnessLabels[freshnessFor(report)]}`;
     row.querySelector(".row-summary").textContent = report.summary;
 
@@ -676,18 +982,27 @@ function selectReport(id, panToMarker) {
 
   const marker = state.markers.get(id);
   if (marker && panToMarker) {
-    state.map.flyTo(marker.getLatLng(), Math.max(state.map.getZoom(), 8), { duration: 0.45 });
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) {
+      state.map.setView(marker.getLatLng(), Math.max(state.map.getZoom(), 8));
+    } else {
+      state.map.flyTo(marker.getLatLng(), Math.max(state.map.getZoom(), 8), { duration: 0.45 });
+    }
   }
   if (marker) marker.openPopup();
 }
 
 function render(options = {}) {
   const reports = getFilteredReports();
+  const published = publishedReports();
+  if (!reports.some((report) => report.id === state.selectedId)) state.selectedId = null;
   writeFiltersToUrl();
   renderSummary(reports);
+  renderHotspots(published);
+  renderOperatorPulse(published);
+  renderActiveFilters();
   renderMarkers(reports);
   renderList(reports);
-  if (!reports.some((report) => report.id === state.selectedId)) state.selectedId = null;
   if (options.fit) fitMap(reports, false);
 }
 

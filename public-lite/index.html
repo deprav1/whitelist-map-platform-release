@@ -8,10 +8,11 @@
   <title>WhiteS - карта доступности интернета</title>
   <meta name="description" content="Карта пользовательских отметок о доступности интернета, отключениях и режиме белого списка.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.9.4">
-  <link rel="stylesheet" href="styles.css?v=20260702-map2">
+  <link rel="stylesheet" href="styles.css?v=20260702-ux2">
 </head>
 <body>
   <div class="app-shell">
+    <div class="sr-only" id="liveRegion" aria-live="polite"></div>
     <header class="topbar">
       <div class="brand-lockup">
         <span class="brand">WhiteS</span>
@@ -22,13 +23,14 @@
         <button class="ghost-button" id="tileModeButton" type="button">Тайлы выкл</button>
         <button class="ghost-button" id="clearLocalButton" type="button">Очистить</button>
         <button class="ghost-button" id="resetMapButton" type="button">Россия</button>
+        <button class="primary-button" id="reportButton" type="button">Сообщить</button>
         <button class="primary-button" id="shareButton" type="button">Поделиться</button>
       </div>
     </header>
 
-    <nav class="mobile-tabs" aria-label="Переключение вида">
-      <button class="mobile-tab is-active" id="showMapTab" type="button">Карта</button>
-      <button class="mobile-tab" id="showListTab" type="button">Список</button>
+    <nav class="mobile-tabs" aria-label="Переключение вида" role="tablist">
+      <button class="mobile-tab is-active" id="showMapTab" type="button" role="tab" aria-selected="true">Карта</button>
+      <button class="mobile-tab" id="showListTab" type="button" role="tab" aria-selected="false">Список</button>
     </nav>
 
     <main class="map-layout">
@@ -110,8 +112,28 @@
           </div>
           <p class="safety-note">Точки примерные. Точные адреса, телефоны и личные данные не публикуются.</p>
           <p class="source-note" id="sourceNote"></p>
+          <div class="drawer-actions">
+            <button class="primary-button" id="drawerReportButton" type="button">Сообщить о проблеме</button>
+            <button class="ghost-button" id="aboutDataButton" type="button">О данных</button>
+          </div>
         </section>
 
+        <section class="insights-panel" aria-label="Быстрый обзор ситуации">
+          <header class="section-title">
+            <h2>Сейчас заметнее всего</h2>
+            <button class="text-button" id="resetContextButton" type="button">все регионы</button>
+          </header>
+          <div class="hotspots-list" id="hotspotsList"></div>
+        </section>
+
+        <section class="operator-panel" aria-label="Сводка по операторам">
+          <header class="section-title">
+            <h2>Операторы</h2>
+          </header>
+          <div class="operator-pulse" id="operatorPulse"></div>
+        </section>
+
+        <section class="active-filters" id="activeFilters" aria-label="Активные фильтры"></section>
         <section class="reports-list" id="reportsList" aria-label="Последние отметки"></section>
       </aside>
     </main>
@@ -121,7 +143,10 @@
     <button class="report-row" type="button">
       <span class="row-status"></span>
       <span class="row-content">
-        <span class="row-title"></span>
+        <span class="row-title-line">
+          <span class="row-title"></span>
+          <span class="row-status-label"></span>
+        </span>
         <span class="row-meta"></span>
         <span class="row-summary"></span>
         <span class="row-tags"></span>
@@ -129,7 +154,114 @@
     </button>
   </template>
 
+  <dialog class="modal" id="reportDialog" aria-labelledby="reportDialogTitle">
+    <form class="modal-body" id="reportDraftForm" method="dialog">
+      <header class="modal-head">
+        <div>
+          <h2 id="reportDialogTitle">Сообщить наблюдение</h2>
+          <p>Форма пока готовит безопасный черновик и не отправляет данные автоматически.</p>
+        </div>
+        <button class="icon-button" value="close" type="submit" aria-label="Закрыть">×</button>
+      </header>
+
+      <section class="modal-warning">
+        Не указывайте ФИО, телефон, точный адрес, место работы, аккаунты и скриншоты с личными данными.
+      </section>
+
+      <div class="report-form-grid">
+        <label>
+          <span>Город или район</span>
+          <input id="draftArea" name="area" placeholder="Например: Москва, ЮАО">
+        </label>
+        <label>
+          <span>Оператор</span>
+          <input id="draftOperator" name="operator" placeholder="МТС, Билайн, Ростелеком">
+        </label>
+        <label>
+          <span>Тип сети</span>
+          <select id="draftNetwork" name="network">
+            <option>Мобильный интернет</option>
+            <option>Домашний интернет</option>
+            <option>Общественный Wi-Fi</option>
+            <option>Связь / SMS</option>
+            <option>Не знаю</option>
+          </select>
+        </label>
+        <label>
+          <span>Проблема</span>
+          <select id="draftProblem" name="problem">
+            <option>Полное отключение</option>
+            <option>Работает только белый список</option>
+            <option>Сильное замедление</option>
+            <option>Не работают отдельные сервисы</option>
+            <option>Доступ восстановился</option>
+          </select>
+        </label>
+        <label>
+          <span>Что проверяли</span>
+          <input id="draftServices" name="services" placeholder="Карты, банки, такси, Telegram">
+        </label>
+        <label>
+          <span>Уверенность</span>
+          <select id="draftConfidence" name="confidence">
+            <option>Проверил сам</option>
+            <option>Подтверждено несколькими людьми</option>
+            <option>Со слов знакомых</option>
+            <option>Видел массовые жалобы</option>
+            <option>Не уверен</option>
+          </select>
+        </label>
+        <label class="wide-field">
+          <span>Короткий комментарий</span>
+          <textarea id="draftSummary" name="summary" rows="4" maxlength="500" placeholder="Что именно открывалось или не открывалось. Без личных данных."></textarea>
+          <small id="draftSummaryCounter">0 / 500</small>
+        </label>
+      </div>
+
+      <ul class="privacy-checklist" aria-label="Проверка безопасности перед отправкой">
+        <li>Пишите район или город, а не точный адрес.</li>
+        <li>Описывайте проверенные сервисы, а не личные действия.</li>
+        <li>Перед публикацией запись должна пройти модерацию.</li>
+      </ul>
+
+      <div class="modal-actions">
+        <button class="ghost-button" id="copyDraftButton" type="button">Скопировать черновик</button>
+        <button class="primary-button" value="close" type="submit">Готово</button>
+      </div>
+      <textarea class="draft-output" id="draftOutput" readonly aria-label="Черновик отчета"></textarea>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="aboutDialog" aria-labelledby="aboutDialogTitle">
+    <form class="modal-body" method="dialog">
+      <header class="modal-head">
+        <div>
+          <h2 id="aboutDialogTitle">О данных и безопасности</h2>
+          <p>WhiteS показывает пользовательские отметки после модерации.</p>
+        </div>
+        <button class="icon-button" value="close" type="submit" aria-label="Закрыть">×</button>
+      </header>
+      <section class="info-grid">
+        <article>
+          <h3>Что видно публично</h3>
+          <p>Регион, примерный район, оператор, тип проблемы, время проверки, уверенность и безопасный краткий комментарий.</p>
+        </article>
+        <article>
+          <h3>Что не нужно отправлять</h3>
+          <p>ФИО, телефон, email, точный адрес, место работы, аккаунты, скриншоты профилей и личные маршруты.</p>
+        </article>
+        <article>
+          <h3>Почему карта может быть без тайлов</h3>
+          <p>На мобильном карта открывается без внешних тайлов по умолчанию: список и точки работают, а лишние запросы к картографическому сервису не уходят.</p>
+        </article>
+      </section>
+      <div class="modal-actions">
+        <button class="primary-button" value="close" type="submit">Понятно</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="vendor/leaflet/leaflet.js?v=1.9.4"></script>
-  <script src="app.js?v=20260702-map2"></script>
+  <script src="app.js?v=20260702-ux2"></script>
 </body>
 </html>
