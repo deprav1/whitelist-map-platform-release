@@ -4,6 +4,10 @@ tmp
 docker-compose.*
 *.encrypted
 .git
+.env
+backups
+docs
+scripts
 
 # super secret stuff
 deployment.env

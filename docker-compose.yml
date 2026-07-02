@@ -3,30 +3,49 @@ services:
   ushahidi:
     platform: linux/amd64
     build: .
+    restart: unless-stopped
     volumes:
       - .tars:/tars
+      - ushahidi-storage:/var/www/html/platform/storage
+    depends_on:
+      - mysql
+      - redis
     links:
       - mysql
       - redis
     ports:
-      - 80:80
+      - "${APP_PORT:-8080}:80"
     environment:
       MYSQL_HOST: mysql
-      MYSQL_DATABASE: ushahidi
-      MYSQL_USER: ushahidi
-      MYSQL_PASSWORD: ushahidi
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-ushahidi}
+      MYSQL_USER: ${MYSQL_USER:-ushahidi}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ushahidi}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       CACHE_DRIVER: redis
-      # Setting this variable is required for the mobile app to work:
-      # SITE_URL: http://example.com
+      SITE_URL: ${SITE_URL:-http://localhost:8080}
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Budapest}
   mysql:
     platform: linux/amd64
     image: mysql:5.7
+    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: ushahidi
-      MYSQL_USER: ushahidi
-      MYSQL_PASSWORD: ushahidi
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-ushahidi}
+      MYSQL_USER: ${MYSQL_USER:-ushahidi}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ushahidi}
+    volumes:
+      - mysql-data:/var/lib/mysql
   redis:
     image: redis:4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+
+volumes:
+  mysql-data:
+  redis-data:
+  ushahidi-storage:

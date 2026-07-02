@@ -1,0 +1,18 @@
+app = "REPLACE_WITH_FLY_DB_APP"
+primary_region = "fra"
+
+[build]
+  image = "mysql:5.7"
+
+[env]
+  MYSQL_DATABASE = "ushahidi"
+  MYSQL_USER = "ushahidi"
+
+[[mounts]]
+  source = "mysql_data"
+  destination = "/var/lib/mysql"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1

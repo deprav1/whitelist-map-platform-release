@@ -147,6 +147,11 @@ bundle() {
   tar -C /tmp/release -cz -f /vols/out/ushahidi-platform-release-${release_version}.tar.gz ushahidi-platform-release-${release_version}
 }
 
+prepare_release() {
+  needs_fetch && fetch || true;
+  needs_build && build || true;
+}
+
 setup_api() {
   cat > /etc/supervisor/conf.d/api-log <<EOF
 [program:tail-api]
@@ -224,11 +229,15 @@ install_app() {
   #
   # Create app_key
   if [ ! -f ${PLATFORM_API_HOME}/.env.app_key ]; then
-    cat /dev/urandom | \
-      LC_ALL=C tr -cd 'A-Za-z0-9_\!\@\%\^\&\*\(\)-+=' | \
-      fold -w 32 | \
-      head -1 \
-    > ${PLATFORM_API_HOME}/.env.app_key
+    if [ -n "${APP_KEY}" ]; then
+      printf "%s" "${APP_KEY}" > ${PLATFORM_API_HOME}/.env.app_key
+    else
+      cat /dev/urandom | \
+        LC_ALL=C tr -cd 'A-Za-z0-9_\!\@\%\^\&\*\(\)-+=' | \
+        fold -w 32 | \
+        head -1 \
+      > ${PLATFORM_API_HOME}/.env.app_key
+    fi
   fi
   #
   write_platform_env
@@ -412,9 +421,11 @@ case "$1" in
     bundle
     ;;
   run)
-    needs_fetch && fetch || true;
-    needs_build && build || true;
+    prepare_release
     run
+    ;;
+  prepare)
+    prepare_release
     ;;
   *)
     exec "$@"

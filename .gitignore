@@ -1,6 +1,9 @@
 .tars
 backups
 tmp
+.env
+*.local
+*.log
 
 # super secret stuff
 deployment.env

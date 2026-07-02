@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>WhiteS - карта доступности интернета</title>
+  <meta name="description" content="Карта пользовательских отметок о доступности интернета, отключениях и режиме белого списка.">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.9.4">
+  <link rel="stylesheet" href="styles.css?v=20260702-map2">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <span class="brand">WhiteS</span>
+        <span class="tagline">Карта доступности интернета</span>
+      </div>
+      <div class="top-actions">
+        <span class="status-pill" id="dataBadge">демо-данные</span>
+        <button class="ghost-button" id="resetMapButton" type="button">Россия</button>
+        <button class="primary-button" id="shareButton" type="button">Поделиться</button>
+      </div>
+    </header>
+
+    <nav class="mobile-tabs" aria-label="Переключение вида">
+      <button class="mobile-tab is-active" id="showMapTab" type="button">Карта</button>
+      <button class="mobile-tab" id="showListTab" type="button">Список</button>
+    </nav>
+
+    <main class="map-layout">
+      <section class="map-stage" aria-label="Карта отчетов">
+        <div class="map-canvas" id="map"></div>
+
+        <section class="filters-panel" aria-label="Фильтры">
+          <label class="search-field">
+            <span>Поиск</span>
+            <input id="searchInput" type="search" placeholder="Регион, город, оператор">
+          </label>
+          <div class="quick-filters" aria-label="Быстрые фильтры">
+            <button class="quick-filter is-active" type="button" data-category="all">Все</button>
+            <button class="quick-filter" type="button" data-category="internet-shutdown">Отключения</button>
+            <button class="quick-filter" type="button" data-category="whitelist-only">Белый список</button>
+            <button class="quick-filter" type="button" data-category="restored">Восстановлено</button>
+          </div>
+          <label>
+            <span>Проблема</span>
+            <select id="problemFilter"></select>
+          </label>
+          <label>
+            <span>Оператор</span>
+            <select id="operatorFilter"></select>
+          </label>
+          <label>
+            <span>Сервис</span>
+            <select id="serviceFilter"></select>
+          </label>
+          <label>
+            <span>Свежесть</span>
+            <select id="freshnessFilter">
+              <option value="all">Любая</option>
+              <option value="now">Свежее</option>
+              <option value="today">Сегодня</option>
+              <option value="recent">Недавно</option>
+              <option value="stale">Устарело</option>
+            </select>
+          </label>
+          <button class="ghost-button" id="resetFiltersButton" type="button">Сбросить</button>
+        </section>
+
+        <section class="map-legend" aria-label="Легенда">
+          <span><i class="dot shutdown"></i>отключение</span>
+          <span><i class="dot whitelist"></i>белый список</span>
+          <span><i class="dot partial"></i>частично</span>
+          <span><i class="dot restored"></i>восстановлено</span>
+        </section>
+
+        <div class="tile-warning" id="tileWarning" hidden>
+          Карта загружается без тайлов. Отчеты и фильтры доступны.
+        </div>
+      </section>
+
+      <aside class="report-drawer" aria-label="Список отчетов">
+        <section class="summary-panel">
+          <div>
+            <span id="totalCount">0</span>
+            <strong>отчетов</strong>
+          </div>
+          <div>
+            <span id="freshCount">0</span>
+            <strong>свежих</strong>
+          </div>
+          <div>
+            <span id="regionsCount">0</span>
+            <strong>регионов</strong>
+          </div>
+          <div>
+            <span id="shutdownCount">0</span>
+            <strong>сбоев</strong>
+          </div>
+        </section>
+
+        <section class="drawer-head">
+          <div>
+            <h1>Что работает сейчас</h1>
+            <p id="updatedAt">обновление...</p>
+          </div>
+          <p class="safety-note">Точки примерные. Точные адреса, телефоны и личные данные не публикуются.</p>
+          <p class="source-note" id="sourceNote"></p>
+        </section>
+
+        <section class="reports-list" id="reportsList" aria-label="Последние отметки"></section>
+      </aside>
+    </main>
+  </div>
+
+  <template id="reportTemplate">
+    <button class="report-row" type="button">
+      <span class="row-status"></span>
+      <span class="row-content">
+        <span class="row-title"></span>
+        <span class="row-meta"></span>
+        <span class="row-summary"></span>
+        <span class="row-tags"></span>
+      </span>
+    </button>
+  </template>
+
+  <script src="vendor/leaflet/leaflet.js?v=1.9.4"></script>
+  <script src="app.js?v=20260702-map2"></script>
+</body>
+</html>

@@ -1,3 +1,49 @@
+# WhiteS whitelist map
+
+This fork packages Ushahidi Platform Release for a crowdsourced whitelist map.
+The first project-specific layer lives in:
+
+* `docker-compose.yml` - local port/env/volume setup for development.
+* `.env.example` - local settings template.
+* `config/whitelist-survey.v5.json` - report form with moderation enabled.
+* `config/whitelist-categories.v5.json` - starter map categories.
+* `scripts/bootstrap-whitelist.ps1` - creates the form/categories through the Ushahidi API after Docker is running.
+* `scripts/deploy-fly.ps1` - deploy helper for Fly.io public MVP hosting.
+* `scripts/package-timeweb-shared.ps1` - builds an uploadable package for Timeweb shared hosting.
+* `scripts/package-public-lite.ps1` - builds the uploadable static map package for Timeweb without SSH.
+* `scripts/deploy-public-lite-ssh.ps1` - deploys the static map over SSH when key access is enabled.
+* `deploy/fly/` - Fly.io app and MySQL templates.
+* `deploy/timeweb/` - Timeweb shared hosting environment template.
+* `docs/WHITES_SETUP.md` - short setup guide for this fork.
+* `docs/PRODUCT_LOGIC_RU.md` - product logic for the Russian connectivity-reporting use case.
+* `docs/ROADMAP_RU.md` - independent roadmap based on user scenarios and reference product mechanics.
+* `docs/MONTH_PLAN_RU.md` - maximum 30-day execution plan for beta launch and growth readiness.
+* `docs/FREE_HOSTING_DEPLOY.md` - free/near-free hosting path and caveats.
+* `docs/DATABASE_OPTIONS.md` - database options and tradeoffs for the MVP.
+* `docs/TIMEWEB_DEPLOY.md` - Timeweb shared hosting and VPS migration path.
+* `docs/PRIVACY_RU.md`, `docs/REPORT_RULES_RU.md`, `docs/SAFETY_RU.md`, `docs/FAQ_RU.md` - public trust and safety pages for launch.
+* `docs/MODERATION_RU.md`, `docs/SPAM_DUPLICATES_RU.md`, `docs/LOW_BANDWIDTH_QA_RU.md` - beta operations playbooks.
+* `docs/PUBLIC_DATA_CONTRACT.md` - safe public JSON contract for the lightweight frontend.
+* `docs/PUBLIC_LITE_DEPLOY_RU.md` - no-SSH Timeweb upload guide for the static map.
+* `docs/SSH_ACCESS_RU.md` - safe SSH key setup and deploy command.
+* `docs/SUBDOMAIN_TIMEWEB_RU.md` - Timeweb subdomain target and deploy path for `whites.kidai.website`.
+* `docs/CURRENT_STATUS_RU.md` - current public URL, deploy commands, and next working backlog.
+* `public-lite/` - low-bandwidth read-only frontend prototype.
+* `data/public-reports.sample.json` - sample moderated public data.
+* `scripts/validate-public-data.ps1` - validates safe public JSON exports.
+* `docs/BACKUP_RESTORE_RU.md`, `docs/OPERATIONS_CHECKLIST_RU.md` - launch operations basics.
+
+Quick start after Docker Desktop is installed:
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d --build
+.\scripts\bootstrap-whitelist.ps1
+```
+
+The app defaults to `http://localhost:8080`. The upstream default admin is
+`admin@example.com` / `admin`; change it before exposing the site.
+
 # Ushahidi Platform version 6 releases
 
 Install and run the Ushahidi Platform easily. No builds, no compiling.

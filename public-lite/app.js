@@ -1,0 +1,652 @@
+const fallbackData = {
+  updated_at: "2026-07-02T18:50:00+03:00",
+  source: "WhiteS demo moderated reports",
+  disclaimer: "Пользовательские отметки, не официальные данные. Проверяйте свежесть и уровень уверенности.",
+  reports: [
+    {
+      id: "demo-001",
+      region: "Москва",
+      city_or_area: "ЮАО",
+      operator: "МТС",
+      network_type: "Мобильный интернет",
+      problem_type: "Работает только белый список",
+      incident_category: "whitelist-only",
+      checked_services: ["Карты / навигация", "Такси", "Банки / оплата"],
+      checked_at: "2026-07-02T18:30:00+03:00",
+      confidence: "Проверил сам",
+      freshness: "now",
+      summary: "Карты и такси не открывались. Банковское приложение работало.",
+      approx_location: { lat: 55.62, lon: 37.61, precision: "district" }
+    },
+    {
+      id: "demo-002",
+      region: "Краснодарский край",
+      city_or_area: "Краснодар",
+      operator: "МегаФон",
+      network_type: "Мобильный интернет",
+      problem_type: "Полное отключение",
+      incident_category: "internet-shutdown",
+      checked_services: ["Telegram", "Карты / навигация", "Зарубежные сайты"],
+      checked_at: "2026-07-02T17:40:00+03:00",
+      confidence: "Подтверждено несколькими людьми",
+      freshness: "now",
+      summary: "Мобильный интернет не работал, связь и SMS были доступны.",
+      approx_location: { lat: 45.04, lon: 38.97, precision: "city" }
+    },
+    {
+      id: "demo-003",
+      region: "Республика Татарстан",
+      city_or_area: "Казань",
+      operator: "Билайн",
+      network_type: "Домашний интернет",
+      problem_type: "Доступ восстановился",
+      incident_category: "restored",
+      checked_services: ["YouTube", "Зарубежные сайты", "Российские соцсети"],
+      checked_at: "2026-07-01T21:15:00+03:00",
+      confidence: "Проверил сам",
+      freshness: "today",
+      summary: "После вечернего сбоя доступ восстановился, страницы открывались стабильно.",
+      approx_location: { lat: 55.79, lon: 49.12, precision: "city" }
+    },
+    {
+      id: "demo-004",
+      region: "Ростовская область",
+      city_or_area: "Ростов-на-Дону",
+      operator: "Tele2",
+      network_type: "Мобильный интернет",
+      problem_type: "Не работают отдельные сервисы",
+      incident_category: "partial-connectivity",
+      checked_services: ["WhatsApp", "Telegram", "Банки / оплата"],
+      checked_at: "2026-06-30T14:20:00+03:00",
+      confidence: "Со слов знакомых",
+      freshness: "recent",
+      summary: "Мессенджеры работали нестабильно, банковские приложения открывались.",
+      approx_location: { lat: 47.23, lon: 39.72, precision: "city" }
+    }
+  ]
+};
+
+const state = {
+  data: fallbackData,
+  dataUrl: "embedded fallback",
+  map: null,
+  markerLayer: null,
+  radiusLayer: null,
+  markers: new Map(),
+  selectedId: null,
+  searchDebounceId: null,
+  filters: {
+    search: "",
+    category: "all",
+    problem: "all",
+    operator: "all",
+    service: "all",
+    freshness: "all"
+  }
+};
+
+const categoryMeta = {
+  "internet-shutdown": { className: "shutdown", color: "#c7473f", label: "Отключение" },
+  "whitelist-only": { className: "whitelist", color: "#d98621", label: "Белый список" },
+  "partial-connectivity": { className: "partial", color: "#c7682d", label: "Частично" },
+  restored: { className: "restored", color: "#1f7a55", label: "Восстановлено" },
+  "needs-verification": { className: "unknown", color: "#7a8292", label: "Проверка" }
+};
+
+const categoryWeight = {
+  "internet-shutdown": 4,
+  "whitelist-only": 3,
+  "partial-connectivity": 2,
+  "needs-verification": 1,
+  restored: 0
+};
+
+const freshnessLabels = {
+  now: "свежее",
+  today: "сегодня",
+  recent: "недавно",
+  stale: "устарело"
+};
+
+const precisionRadius = {
+  district: 4500,
+  city: 14000,
+  region: 55000
+};
+
+const dataSources = ["reports.json", "data/public-reports.json", "reports.sample.json"];
+const cacheKey = "whites:last-public-data";
+
+const searchAliases = {
+  спб: "санкт-петербург питер петербург",
+  питер: "санкт-петербург спб петербург",
+  мегафон: "мегафон мегафон",
+  телега: "telegram телеграм",
+  телеграм: "telegram телега",
+  вацап: "whatsapp вотсап ватсап",
+  вотсап: "whatsapp вацап ватсап",
+  ютуб: "youtube",
+  госы: "госуслуги",
+  сбп: "банки оплата"
+};
+
+const $ = (selector) => document.querySelector(selector);
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function unique(values) {
+  return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, "ru"));
+}
+
+function categoryFor(report) {
+  return categoryMeta[report.incident_category] || categoryMeta["needs-verification"];
+}
+
+function formatTime(value) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
+}
+
+function freshnessFor(report) {
+  const checkedAt = new Date(report.checked_at);
+  if (Number.isNaN(checkedAt.getTime())) return report.freshness || "stale";
+
+  const ageMs = Date.now() - checkedAt.getTime();
+  const ageHours = ageMs / 36e5;
+  if (ageHours <= 3) return "now";
+  if (ageHours <= 24) return "today";
+  if (ageHours <= 168) return "recent";
+  return "stale";
+}
+
+function normalizeText(value) {
+  const base = String(value ?? "")
+    .toLocaleLowerCase("ru")
+    .replaceAll("ё", "е")
+    .replace(/[^\p{L}\p{N}\s/-]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const aliases = base
+    .split(" ")
+    .map((part) => searchAliases[part] || "")
+    .filter(Boolean)
+    .join(" ");
+  return `${base} ${aliases}`.trim();
+}
+
+function sortedReports(reports) {
+  return [...reports].sort((a, b) => new Date(b.checked_at) - new Date(a.checked_at));
+}
+
+async function loadData() {
+  for (const source of dataSources) {
+    try {
+      const response = await fetch(source, { cache: "no-store" });
+      if (!response.ok) continue;
+      state.data = await response.json();
+      state.dataUrl = source;
+      localStorage.setItem(cacheKey, JSON.stringify({ data: state.data, dataUrl: source, saved_at: new Date().toISOString() }));
+      return;
+    } catch {
+      // Try the next known public export path.
+    }
+  }
+
+  try {
+    const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+    if (cached?.data?.reports?.length) {
+      state.data = cached.data;
+      state.dataUrl = `${cached.dataUrl || "cache"} (кэш)`;
+      return;
+    }
+  } catch {
+    localStorage.removeItem(cacheKey);
+  }
+
+  state.data = fallbackData;
+}
+
+function fillSelect(element, values, allLabel) {
+  element.innerHTML = "";
+  const all = document.createElement("option");
+  all.value = "all";
+  all.textContent = allLabel;
+  element.appendChild(all);
+
+  values.forEach((value) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    element.appendChild(option);
+  });
+}
+
+function readFiltersFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  ["search", "category", "problem", "operator", "service", "freshness"].forEach((key) => {
+    const value = params.get(key);
+    if (value) state.filters[key] = value;
+  });
+}
+
+function writeFiltersToUrl() {
+  const params = new URLSearchParams();
+  Object.entries(state.filters).forEach(([key, value]) => {
+    if (value && value !== "all") params.set(key, value);
+  });
+  const nextUrl = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
+  window.history.replaceState(null, "", nextUrl);
+}
+
+function setupFilters() {
+  const reports = state.data.reports;
+  fillSelect($("#problemFilter"), unique(reports.map((report) => report.problem_type)), "Все проблемы");
+  fillSelect($("#operatorFilter"), unique(reports.map((report) => report.operator)), "Все операторы");
+  fillSelect($("#serviceFilter"), unique(reports.flatMap((report) => report.checked_services || [])), "Все сервисы");
+
+  $("#searchInput").value = state.filters.search;
+  $("#problemFilter").value = state.filters.problem;
+  $("#operatorFilter").value = state.filters.operator;
+  $("#serviceFilter").value = state.filters.service;
+  $("#freshnessFilter").value = state.filters.freshness;
+  updateQuickFilters();
+
+  $("#searchInput").addEventListener("input", (event) => {
+    state.filters.search = event.target.value.trim();
+    render({ fit: false });
+    clearTimeout(state.searchDebounceId);
+    state.searchDebounceId = setTimeout(() => fitMap(getFilteredReports(), false), 240);
+  });
+
+  document.querySelectorAll(".quick-filter").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.filters.category = button.dataset.category || "all";
+      updateQuickFilters();
+      render({ fit: true });
+    });
+  });
+
+  ["problem", "operator", "service", "freshness"].forEach((key) => {
+    $(`#${key}Filter`).addEventListener("change", (event) => {
+      state.filters[key] = event.target.value;
+      render({ fit: true });
+    });
+  });
+
+  $("#resetFiltersButton").addEventListener("click", () => {
+    state.filters = { search: "", category: "all", problem: "all", operator: "all", service: "all", freshness: "all" };
+    $("#searchInput").value = "";
+    $("#problemFilter").value = "all";
+    $("#operatorFilter").value = "all";
+    $("#serviceFilter").value = "all";
+    $("#freshnessFilter").value = "all";
+    updateQuickFilters();
+    render({ fit: true });
+  });
+
+  $("#resetMapButton").addEventListener("click", () => {
+    fitMap(getFilteredReports(), true);
+  });
+
+  $("#shareButton").addEventListener("click", shareCurrentView);
+
+  $("#showMapTab").addEventListener("click", () => setMobileView("map"));
+  $("#showListTab").addEventListener("click", () => setMobileView("list"));
+}
+
+function updateQuickFilters() {
+  document.querySelectorAll(".quick-filter").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.category === state.filters.category);
+  });
+}
+
+function setMobileView(view) {
+  document.body.classList.toggle("show-map", view === "map");
+  document.body.classList.toggle("show-list", view === "list");
+  $("#showMapTab").classList.toggle("is-active", view === "map");
+  $("#showListTab").classList.toggle("is-active", view === "list");
+  if (view === "map" && state.map) {
+    setTimeout(() => state.map.invalidateSize(), 40);
+  }
+}
+
+function setupMap() {
+  if (!window.L) {
+    $("#tileWarning").hidden = false;
+    return;
+  }
+
+  state.map = L.map("map", {
+    center: [55.75, 37.62],
+    zoom: 4,
+    minZoom: 3,
+    maxZoom: 12,
+    zoomControl: false,
+    attributionControl: false
+  });
+
+  L.control.zoom({ position: "bottomright" }).addTo(state.map);
+  L.control
+    .attribution({ prefix: false, position: "bottomleft" })
+    .addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>')
+    .addTo(state.map);
+
+  const tiles = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    minZoom: 3,
+    maxZoom: 18
+  });
+
+  let tileErrorShown = false;
+  tiles.on("tileerror", () => {
+    if (tileErrorShown) return;
+    tileErrorShown = true;
+    $("#tileWarning").hidden = false;
+  });
+
+  tiles.addTo(state.map);
+  state.radiusLayer = L.layerGroup().addTo(state.map);
+  state.markerLayer = L.layerGroup().addTo(state.map);
+  state.map.on("zoomend", () => renderMarkers(getFilteredReports()));
+}
+
+function getFilteredReports() {
+  const search = normalizeText(state.filters.search);
+  return sortedReports(state.data.reports).filter((report) => {
+    if (report.status && report.status !== "published") return false;
+    if (state.filters.category !== "all" && report.incident_category !== state.filters.category) return false;
+    if (state.filters.problem !== "all" && report.problem_type !== state.filters.problem) return false;
+    if (state.filters.operator !== "all" && report.operator !== state.filters.operator) return false;
+    if (state.filters.service !== "all" && !(report.checked_services || []).includes(state.filters.service)) return false;
+    if (state.filters.freshness !== "all" && freshnessFor(report) !== state.filters.freshness) return false;
+    if (!search) return true;
+
+    const haystack = [
+      report.region,
+      report.city_or_area,
+      report.operator,
+      report.network_type,
+      report.problem_type,
+      report.incident_category,
+      report.confidence,
+      report.confirmation_count,
+      report.approx_location?.precision,
+      report.summary,
+      ...(report.checked_services || [])
+    ]
+      .join(" ")
+      ;
+    return normalizeText(haystack).includes(search);
+  });
+}
+
+function popupHtml(report) {
+  const category = categoryFor(report);
+  const confirmationText = report.confirmation_count ? `${report.confirmation_count} подтвержд.` : "";
+  const precisionText = report.approx_location?.precision ? `точность: ${report.approx_location.precision}` : "";
+  const tags = [category.label, freshnessLabels[freshnessFor(report)], report.confidence, confirmationText, precisionText, ...(report.checked_services || []).slice(0, 4)]
+    .filter(Boolean)
+    .map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`)
+    .join("");
+
+  return `
+    <h2 class="popup-title">${escapeHtml(report.city_or_area)}, ${escapeHtml(report.operator)}</h2>
+    <p class="popup-meta">${escapeHtml(report.region)} · ${escapeHtml(report.network_type)} · ${escapeHtml(formatTime(report.checked_at))}</p>
+    <p class="popup-text">${escapeHtml(report.summary)}</p>
+    <div class="popup-tags">${tags}</div>
+  `;
+}
+
+function worstCategory(reports) {
+  return reports.reduce((worst, report) => {
+    const current = report.incident_category || "needs-verification";
+    return (categoryWeight[current] ?? 1) > (categoryWeight[worst] ?? 1) ? current : worst;
+  }, "restored");
+}
+
+function averageLocation(reports) {
+  const located = reports.filter((report) => report.approx_location);
+  const lat = located.reduce((sum, report) => sum + report.approx_location.lat, 0) / located.length;
+  const lon = located.reduce((sum, report) => sum + report.approx_location.lon, 0) / located.length;
+  return [lat, lon];
+}
+
+function groupReportsForMap(reports) {
+  if (!state.map || state.map.getZoom() >= 6) {
+    return reports.map((report) => ({ type: "single", reports: [report] }));
+  }
+
+  const groups = new Map();
+  reports
+    .filter((report) => report.approx_location)
+    .forEach((report) => {
+      const key = report.region;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(report);
+    });
+
+  return [...groups.values()].map((items) => ({
+    type: items.length > 1 ? "cluster" : "single",
+    reports: items
+  }));
+}
+
+function clusterPopupHtml(group) {
+  const reports = group.reports;
+  const first = reports[0];
+  const category = categoryFor({ incident_category: worstCategory(reports) });
+  const operators = unique(reports.map((report) => report.operator)).slice(0, 4).join(", ");
+  const freshCount = reports.filter((report) => ["now", "today"].includes(freshnessFor(report))).length;
+
+  return `
+    <h2 class="popup-title">${escapeHtml(first.region)}</h2>
+    <p class="popup-meta">${reports.length} отметок · ${escapeHtml(category.label)} · ${freshCount} свежих</p>
+    <p class="popup-text">Операторы: ${escapeHtml(operators)}.</p>
+    <div class="popup-tags">
+      <span class="tag strong">${reports.length} отчетов</span>
+      <span class="tag">${escapeHtml(category.label)}</span>
+    </div>
+  `;
+}
+
+function renderMarkers(reports) {
+  if (!state.map) return;
+
+  state.markerLayer.clearLayers();
+  state.radiusLayer.clearLayers();
+  state.markers.clear();
+
+  groupReportsForMap(reports).forEach((group) => {
+    if (group.type === "cluster") {
+      const category = categoryMeta[worstCategory(group.reports)] || categoryMeta["needs-verification"];
+      const marker = L.marker(averageLocation(group.reports), {
+        icon: L.divIcon({
+          className: "",
+          html: `<span class="cluster-marker ${category.className}">${group.reports.length}</span>`,
+          iconSize: [38, 38],
+          iconAnchor: [19, 19]
+        })
+      });
+
+      marker.bindPopup(clusterPopupHtml(group));
+      marker.on("click", () => {
+        state.map.flyTo(marker.getLatLng(), Math.max(state.map.getZoom() + 2, 6), { duration: 0.45 });
+      });
+      marker.addTo(state.markerLayer);
+      return;
+    }
+
+    const report = group.reports[0];
+    if (!report.approx_location) return;
+
+      const category = categoryFor(report);
+      const latLng = [report.approx_location.lat, report.approx_location.lon];
+      const isActive = report.id === state.selectedId;
+      const radiusMeters = precisionRadius[report.approx_location.precision] || precisionRadius.city;
+
+      L.circle(latLng, {
+        radius: radiusMeters,
+        color: category.color,
+        weight: 1,
+        opacity: 0.28,
+        fillColor: category.color,
+        fillOpacity: 0.08,
+        interactive: false
+      }).addTo(state.radiusLayer);
+
+      const marker = L.circleMarker(latLng, {
+        radius: isActive ? 11 : 8,
+        color: "#ffffff",
+        weight: isActive ? 3 : 2,
+        fillColor: category.color,
+        fillOpacity: 0.95,
+        opacity: 1
+      });
+
+      marker.bindPopup(popupHtml(report));
+      marker.on("click", () => selectReport(report.id, false));
+      marker.addTo(state.markerLayer);
+      state.markers.set(report.id, marker);
+  });
+}
+
+function fitMap(reports, force) {
+  if (!state.map) return;
+
+  const located = reports.filter((report) => report.approx_location);
+  if (!located.length) {
+    state.map.setView([55.75, 37.62], 4);
+    return;
+  }
+
+  if (located.length === 1) {
+    const point = located[0].approx_location;
+    state.map.setView([point.lat, point.lon], force ? 8 : Math.max(state.map.getZoom(), 7));
+    return;
+  }
+
+  const bounds = L.latLngBounds(located.map((report) => [report.approx_location.lat, report.approx_location.lon]));
+  state.map.fitBounds(bounds.pad(0.28), { maxZoom: 8 });
+}
+
+function renderSummary(reports) {
+  $("#totalCount").textContent = reports.length;
+  $("#freshCount").textContent = reports.filter((report) => ["now", "today"].includes(freshnessFor(report))).length;
+  $("#regionsCount").textContent = unique(reports.map((report) => report.region)).length;
+  $("#shutdownCount").textContent = reports.filter((report) =>
+    ["internet-shutdown", "whitelist-only", "partial-connectivity"].includes(report.incident_category)
+  ).length;
+  $("#updatedAt").textContent = `обновлено ${formatTime(state.data.updated_at)}`;
+  const isDemo = state.data.source?.toLocaleLowerCase("ru").includes("demo") || state.dataUrl.includes("sample");
+  $("#dataBadge").textContent = isDemo ? "демо-данные" : "живые данные";
+  $("#sourceNote").textContent = `Источник: ${state.data.source || state.dataUrl}. Публично показываются только опубликованные модерацией записи.`;
+}
+
+function renderList(reports) {
+  const list = $("#reportsList");
+  const template = $("#reportTemplate");
+  list.innerHTML = "";
+
+  if (!reports.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = "По выбранным фильтрам пока нет опубликованных отметок.";
+    list.appendChild(empty);
+    return;
+  }
+
+  reports.forEach((report) => {
+    const node = template.content.cloneNode(true);
+    const row = node.querySelector(".report-row");
+    const category = categoryFor(report);
+    const confirmationText = report.confirmation_count ? `${report.confirmation_count} подтвержд.` : "";
+    const tags = [category.label, freshnessLabels[freshnessFor(report)], report.confidence, confirmationText, ...(report.checked_services || []).slice(0, 3)].filter(Boolean);
+
+    row.dataset.reportId = report.id;
+    row.classList.toggle("is-active", report.id === state.selectedId);
+    row.querySelector(".row-status").classList.add(category.className);
+    row.querySelector(".row-title").textContent = `${report.city_or_area}, ${report.operator}`;
+    row.querySelector(".row-meta").textContent = `${report.region} · ${report.network_type} · ${formatTime(report.checked_at)} · ${freshnessLabels[freshnessFor(report)]}`;
+    row.querySelector(".row-summary").textContent = report.summary;
+
+    const tagWrap = row.querySelector(".row-tags");
+    tags.forEach((value) => {
+      const tag = document.createElement("span");
+      tag.className = "tag";
+      if (String(value).includes("подтвержд")) tag.classList.add("strong");
+      tag.textContent = value;
+      tagWrap.appendChild(tag);
+    });
+
+    row.addEventListener("click", () => selectReport(report.id, true));
+    list.appendChild(node);
+  });
+}
+
+function selectReport(id, panToMarker) {
+  state.selectedId = id;
+
+  document.querySelectorAll(".report-row").forEach((row) => {
+    row.classList.toggle("is-active", row.dataset.reportId === id);
+  });
+
+  state.markers.forEach((marker, markerId) => {
+    const active = markerId === id;
+    marker.setStyle({ radius: active ? 11 : 8, weight: active ? 3 : 2 });
+  });
+
+  const marker = state.markers.get(id);
+  if (marker && panToMarker) {
+    state.map.flyTo(marker.getLatLng(), Math.max(state.map.getZoom(), 8), { duration: 0.45 });
+  }
+  if (marker) marker.openPopup();
+}
+
+function render(options = {}) {
+  const reports = getFilteredReports();
+  writeFiltersToUrl();
+  renderSummary(reports);
+  renderMarkers(reports);
+  renderList(reports);
+  if (!reports.some((report) => report.id === state.selectedId)) state.selectedId = null;
+  if (options.fit) fitMap(reports, false);
+}
+
+async function shareCurrentView() {
+  const url = window.location.href;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: "WhiteS", text: "Карта доступности интернета", url });
+      return;
+    }
+    await navigator.clipboard.writeText(url);
+    $("#shareButton").textContent = "Скопировано";
+  } catch {
+    $("#shareButton").textContent = "Ссылка в адресе";
+  }
+
+  setTimeout(() => {
+    $("#shareButton").textContent = "Поделиться";
+  }, 1400);
+}
+
+async function main() {
+  await loadData();
+  readFiltersFromUrl();
+  setupMap();
+  setupFilters();
+  render({ fit: true });
+}
+
+main();

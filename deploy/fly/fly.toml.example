@@ -1,0 +1,39 @@
+app = "REPLACE_WITH_FLY_APP"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile.fly"
+
+[env]
+  APP_ENV = "production"
+  APP_DEBUG = "false"
+  APP_TIMEZONE = "Europe/Moscow"
+  CACHE_DRIVER = "array"
+  QUEUE_DRIVER = "sync"
+  MYSQL_DATABASE = "ushahidi"
+  MYSQL_USER = "ushahidi"
+  MYSQL_PORT = "3306"
+
+[[mounts]]
+  source = "ushahidi_storage"
+  destination = "/var/www/html/platform/storage"
+
+[http_service]
+  internal_port = 80
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "180s"
+    method = "GET"
+    path = "/"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1

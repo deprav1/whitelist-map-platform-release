@@ -1,0 +1,52 @@
+[
+  {
+    "base_language": "en-US",
+    "type": "category",
+    "icon": "x-circle",
+    "color": "#C2413A",
+    "translations": {},
+    "tag": "Полное отключение",
+    "slug": "internet-shutdown",
+    "description": "Мобильный или фиксированный интернет недоступен полностью."
+  },
+  {
+    "base_language": "en-US",
+    "type": "category",
+    "icon": "shield",
+    "color": "#D79B25",
+    "translations": {},
+    "tag": "Только белый список",
+    "slug": "whitelist-only",
+    "description": "Работают только отдельные разрешенные ресурсы."
+  },
+  {
+    "base_language": "en-US",
+    "type": "category",
+    "icon": "alert-triangle",
+    "color": "#D97706",
+    "translations": {},
+    "tag": "Частично работает",
+    "slug": "partial-connectivity",
+    "description": "Интернет работает нестабильно или доступна только часть сервисов."
+  },
+  {
+    "base_language": "en-US",
+    "type": "category",
+    "icon": "check-circle",
+    "color": "#2F8F5B",
+    "translations": {},
+    "tag": "Восстановлено",
+    "slug": "restored",
+    "description": "Доступ восстановился после сбоя или ограничения."
+  },
+  {
+    "base_language": "en-US",
+    "type": "category",
+    "icon": "help-circle",
+    "color": "#6B7280",
+    "translations": {},
+    "tag": "Требует проверки",
+    "slug": "needs-verification",
+    "description": "Запись требует проверки модератором или сообществом."
+  }
+]
