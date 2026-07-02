@@ -1,6 +1,6 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
-    [string]$DataPath = "data\public-reports.sample.json",
+    [string]$DataPath = "public-lite\reports.json",
     [string]$OutputZip = "tmp\whites-public-lite.zip"
 )
 

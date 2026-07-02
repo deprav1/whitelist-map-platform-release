@@ -123,13 +123,21 @@ const noTilesKey = "whites:no-tiles";
 const searchAliases = {
   спб: "санкт-петербург питер петербург",
   питер: "санкт-петербург спб петербург",
-  мегафон: "мегафон мегафон",
+  "санкт-петербург": "спб питер петербург",
+  петербург: "санкт-петербург спб питер",
+  мегафон: "megafon",
+  megafon: "мегафон",
   телега: "telegram телеграм",
   телеграм: "telegram телега",
+  telegram: "телеграм телега",
   вацап: "whatsapp вотсап ватсап",
   вотсап: "whatsapp вацап ватсап",
+  ватсап: "whatsapp вацап вотсап",
+  whatsapp: "вацап вотсап ватсап",
   ютуб: "youtube",
+  youtube: "ютуб",
   госы: "госуслуги",
+  госуслуги: "госы",
   сбп: "банки оплата"
 };
 
@@ -190,19 +198,12 @@ function freshnessFor(report) {
 }
 
 function normalizeText(value) {
-  const base = String(value ?? "")
+  return String(value ?? "")
     .toLocaleLowerCase("ru")
     .replaceAll("ё", "е")
     .replace(/[^\p{L}\p{N}\s/-]+/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
-
-  const aliases = base
-    .split(" ")
-    .map((part) => searchAliases[part] || "")
-    .filter(Boolean)
-    .join(" ");
-  return `${base} ${aliases}`.trim();
 }
 
 function sortedReports(reports) {
@@ -544,14 +545,16 @@ function addTileLayer() {
 }
 
 function getFilteredReports() {
-  const search = normalizeText(state.filters.search);
+  const searchString = normalizeText(state.filters.search);
+  const searchTokens = searchString.split(" ").filter(Boolean);
+
   return publishedReports().filter((report) => {
     if (state.filters.category !== "all" && report.incident_category !== state.filters.category) return false;
     if (state.filters.problem !== "all" && report.problem_type !== state.filters.problem) return false;
     if (state.filters.operator !== "all" && report.operator !== state.filters.operator) return false;
     if (state.filters.service !== "all" && !(report.checked_services || []).includes(state.filters.service)) return false;
     if (state.filters.freshness !== "all" && freshnessFor(report) !== state.filters.freshness) return false;
-    if (!search) return true;
+    if (searchTokens.length === 0) return true;
 
     const haystack = [
       report.region,
@@ -565,10 +568,20 @@ function getFilteredReports() {
       report.approx_location?.precision,
       report.summary,
       ...(report.checked_services || [])
-    ]
-      .join(" ")
-      ;
-    return normalizeText(haystack).includes(search);
+    ].join(" ");
+
+    const normalizedHaystack = normalizeText(haystack);
+
+    return searchTokens.every((token) => {
+      const synonyms = [token];
+      const aliasString = searchAliases[token];
+      if (aliasString) {
+        aliasString.split(" ").forEach((sym) => {
+          if (sym && !synonyms.includes(sym)) synonyms.push(sym);
+        });
+      }
+      return synonyms.some((synonym) => normalizedHaystack.includes(synonym));
+    });
   });
 }
 

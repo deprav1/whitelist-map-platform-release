@@ -1,6 +1,6 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
-    [string]$Path = "data\public-reports.sample.json"
+    [string]$Path = "public-lite\reports.json"
 )
 
 Set-StrictMode -Version 2.0
