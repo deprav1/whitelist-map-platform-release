@@ -77,7 +77,8 @@ const state = {
   selectedId: null,
   searchDebounceId: null,
   useTiles: true,
-  filters: defaultFilters()
+  filters: defaultFilters(),
+  currentFormStep: 1
 };
 
 const categoryMeta = {
@@ -351,6 +352,33 @@ function setupFilters() {
   });
 
   $("#footerAbout").addEventListener("click", () => openDialog($("#aboutDialog")));
+  $("#footerRules").addEventListener("click", () => openDialog($("#rulesDialog")));
+  $("#footerPrivacy").addEventListener("click", () => openDialog($("#privacyDialog")));
+
+  $("#prevStepButton").addEventListener("click", () => {
+    if (state.currentFormStep > 1) {
+      showFormStep(state.currentFormStep - 1);
+    }
+  });
+
+  $("#nextStepButton").addEventListener("click", () => {
+    const form = $("#reportDraftForm");
+    const activeStep = form.querySelector(`.form-step[data-step="${state.currentFormStep}"]`);
+    const inputs = activeStep.querySelectorAll("input[required], select[required]");
+    let valid = true;
+    inputs.forEach((input) => {
+      if (!input.checkValidity()) {
+        input.reportValidity();
+        valid = false;
+      }
+    });
+    if (!valid) return;
+
+    if (state.currentFormStep < 3) {
+      showFormStep(state.currentFormStep + 1);
+      updateDraftOutput();
+    }
+  });
   $("#copyDraftButton").addEventListener("click", copyReportDraft);
   document.querySelectorAll("#reportDraftForm input, #reportDraftForm select, #reportDraftForm textarea").forEach((field) => {
     field.addEventListener("input", updateDraftOutput);
@@ -424,6 +452,28 @@ function openDialog(dialog) {
   dialog.setAttribute("open", "");
 }
 
+function showFormStep(stepNum) {
+  const form = $("#reportDraftForm");
+  if (!form) return;
+  const steps = form.querySelectorAll(".form-step");
+  steps.forEach((step) => {
+    const active = parseInt(step.dataset.step) === stepNum;
+    step.classList.toggle("is-active", active);
+  });
+
+  const progressBar = $("#formProgressBar");
+  if (progressBar) {
+    progressBar.style.width = `${(stepNum / steps.length) * 100}%`;
+  }
+
+  $("#prevStepButton").style.display = stepNum === 1 ? "none" : "inline-flex";
+  $("#nextStepButton").style.display = stepNum === steps.length ? "none" : "inline-flex";
+  $("#submitFormButton").style.display = stepNum === steps.length ? "inline-flex" : "none";
+  $("#copyDraftButton").style.display = stepNum === steps.length ? "inline-flex" : "none";
+
+  state.currentFormStep = stepNum;
+}
+
 function openReportDialog() {
   const reports = getFilteredReports();
   const latest = reports[0];
@@ -432,6 +482,7 @@ function openReportDialog() {
     $("#draftOperator").value = latest.operator || "";
   }
   updateDraftOutput();
+  showFormStep(1);
   openDialog($("#reportDialog"));
 }
 

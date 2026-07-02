@@ -146,8 +146,30 @@
           <div class="operator-pulse" id="operatorPulse"></div>
         </section>
 
-        <section class="active-filters" id="activeFilters" aria-label="Активные фильтры"></section>
+        <section class="active-filters" id="activeFilters" aria-label="Активные filters"></section>
         <section class="reports-list" id="reportsList" aria-label="Последние отметки"></section>
+
+        <section class="faq-accordion-section" aria-label="Справочные материалы">
+          <details class="accordion-item">
+            <summary>Правила публикации отметок</summary>
+            <div class="accordion-content">
+              <p><strong>Можно размещать:</strong> что именно не работает или восстановилось, примерный район/город, оператора и тип сети, проверенные сервисы (карты, банки, такси, Telegram).</p>
+              <p><strong>Запрещено размещать:</strong> ФИО, номера телефонов, email, точные координаты домов, скриншоты личных переписок или кабинетов.</p>
+            </div>
+          </details>
+          <details class="accordion-item">
+            <summary>Политика конфиденциальности</summary>
+            <div class="accordion-content">
+              <p>WhiteS собирает минимум данных. Мы не запрашиваем имена, номера телефонов, email или пароли. Точные GPS-координаты округляются на уровне модерации.</p>
+            </div>
+          </details>
+          <details class="accordion-item">
+            <summary>Как читать карту?</summary>
+            <div class="accordion-content">
+              <p>Цвета точек обозначают тип проблемы: красный — отключение связи, желтый — белый список, зеленый — доступ восстановлен. Проверяйте время отметки (свежесть).</p>
+            </div>
+          </details>
+        </section>
       </aside>
     </main>
     <footer class="app-footer">
@@ -188,71 +210,94 @@
         <button class="icon-button" value="close" type="submit" aria-label="Закрыть">×</button>
       </header>
 
+      <div class="form-progress" aria-label="Прогресс заполнения формы">
+        <div class="form-progress-bar" id="formProgressBar" style="width: 33.3%"></div>
+      </div>
+
       <section class="modal-warning">
-        Не указывайте ФИО, телефон, точный адрес, место работы, аккаунты и скриншоты с личными данными.
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Не указывайте ФИО, телефон, точный адрес, место работы, аккаунты и скриншоты с личными данными.</span>
       </section>
 
-      <div class="report-form-grid">
-        <label>
-          <span>Город или район</span>
-          <input id="draftArea" name="area" placeholder="Например: Москва, ЮАО">
-        </label>
-        <label>
-          <span>Оператор</span>
-          <input id="draftOperator" name="operator" placeholder="МТС, Билайн, Ростелеком">
-        </label>
-        <label>
-          <span>Тип сети</span>
-          <select id="draftNetwork" name="network">
-            <option>Мобильный интернет</option>
-            <option>Домашний интернет</option>
-            <option>Общественный Wi-Fi</option>
-            <option>Связь / SMS</option>
-            <option>Не знаю</option>
-          </select>
-        </label>
-        <label>
-          <span>Проблема</span>
-          <select id="draftProblem" name="problem">
-            <option>Полное отключение</option>
-            <option>Работает только белый список</option>
-            <option>Сильное замедление</option>
-            <option>Не работают отдельные сервисы</option>
-            <option>Доступ восстановился</option>
-          </select>
-        </label>
-        <label>
-          <span>Что проверяли</span>
-          <input id="draftServices" name="services" placeholder="Карты, банки, такси, Telegram">
-        </label>
-        <label>
-          <span>Уверенность</span>
-          <select id="draftConfidence" name="confidence">
-            <option>Проверил сам</option>
-            <option>Подтверждено несколькими людьми</option>
-            <option>Со слов знакомых</option>
-            <option>Видел массовые жалобы</option>
-            <option>Не уверен</option>
-          </select>
-        </label>
-        <label class="wide-field">
-          <span>Короткий комментарий</span>
-          <textarea id="draftSummary" name="summary" rows="4" maxlength="500" placeholder="Что именно открывалось или не открывалось. Без личных данных."></textarea>
-          <small id="draftSummaryCounter">0 / 500</small>
-        </label>
+      <!-- Шаг 1: Локация и оператор -->
+      <div class="form-step is-active" data-step="1">
+        <div class="report-form-grid">
+          <label>
+            <span>Город или район</span>
+            <input id="draftArea" name="area" placeholder="Например: Москва, ЮАО" required>
+          </label>
+          <label>
+            <span>Оператор</span>
+            <input id="draftOperator" name="operator" placeholder="МТС, Билайн, Ростелеком" required>
+          </label>
+          <label class="wide-field">
+            <span>Тип сети</span>
+            <select id="draftNetwork" name="network">
+              <option>Мобильный интернет</option>
+              <option>Домашний интернет</option>
+              <option>Общественный Wi-Fi</option>
+              <option>Связь / SMS</option>
+              <option>Не знаю</option>
+            </select>
+          </label>
+        </div>
       </div>
 
-      <ul class="privacy-checklist" aria-label="Проверка безопасности перед отправкой">
-        <li>Пишите район или город, а не точный адрес.</li>
-        <li>Описывайте проверенные сервисы, а не личные действия.</li>
-        <li>Перед публикацией запись должна пройти модерацию.</li>
-      </ul>
+      <!-- Шаг 2: Проблема и сервисы -->
+      <div class="form-step" data-step="2">
+        <div class="report-form-grid">
+          <label>
+            <span>Проблема</span>
+            <select id="draftProblem" name="problem">
+              <option>Полное отключение</option>
+              <option>Работает только белый список</option>
+              <option>Сильное замедление</option>
+              <option>Не работают отдельные сервисы</option>
+              <option>Доступ восстановился</option>
+            </select>
+          </label>
+          <label>
+            <span>Уверенность</span>
+            <select id="draftConfidence" name="confidence">
+              <option>Проверил сам</option>
+              <option>Подтверждено несколькими людьми</option>
+              <option>Со слов знакомых</option>
+              <option>Видел массовые жалобы</option>
+              <option>Не уверен</option>
+            </select>
+          </label>
+          <label class="wide-field">
+            <span>Что проверяли (через запятую)</span>
+            <input id="draftServices" name="services" placeholder="Карты, банки, такси, Telegram">
+          </label>
+        </div>
+      </div>
+
+      <!-- Шаг 3: Детали и черновик -->
+      <div class="form-step" data-step="3">
+        <div class="report-form-grid">
+          <label class="wide-field">
+            <span>Короткий комментарий</span>
+            <textarea id="draftSummary" name="summary" rows="3" maxlength="500" placeholder="Что именно открывалось или не открывалось. Без личных данных."></textarea>
+            <small id="draftSummaryCounter">0 / 500</small>
+          </label>
+        </div>
+
+        <ul class="privacy-checklist" aria-label="Проверка безопасности перед отправкой">
+          <li>Пишите район или город, а не точный адрес.</li>
+          <li>Описывайте проверенные сервисы, а не личные действия.</li>
+          <li>Перед публикацией запись должна пройти модерацию.</li>
+        </ul>
+
+        <textarea class="draft-output" id="draftOutput" readonly aria-label="Черновик отчета"></textarea>
+      </div>
 
       <div class="modal-actions">
-        <button class="ghost-button" id="copyDraftButton" type="button">Скопировать черновик</button>
-        <button class="primary-button" value="close" type="submit">Готово</button>
+        <button class="ghost-button" id="prevStepButton" type="button" style="display: none;">Назад</button>
+        <button class="primary-button" id="nextStepButton" type="button">Далее</button>
+        <button class="ghost-button" id="copyDraftButton" type="button" style="display: none;">Скопировать черновик</button>
+        <button class="primary-button" id="submitFormButton" value="close" type="submit" style="display: none;">Готово</button>
       </div>
-      <textarea class="draft-output" id="draftOutput" readonly aria-label="Черновик отчета"></textarea>
     </form>
   </dialog>
 
@@ -267,16 +312,89 @@
       </header>
       <section class="info-grid">
         <article>
+          <div class="info-icon-wrapper">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
           <h3>Что видно публично</h3>
           <p>Регион, примерный район, оператор, тип проблемы, время проверки, уверенность и безопасный краткий комментарий.</p>
         </article>
         <article>
+          <div class="info-icon-wrapper warning">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4M12 16h.01"/></svg>
+          </div>
           <h3>Что не нужно отправлять</h3>
-          <p>ФИО, телефон, email, точный адрес, место работы, аккаунты, скриншоты профилей и личные маршруты.</p>
+          <p>ФИО, контакты (телефон/email), точные адреса/GPS, место работы/учебы, аккаунты и скриншоты с личными данными.</p>
         </article>
         <article>
-          <h3>Почему карта может быть без тайлов</h3>
-          <p>На мобильном карта открывается без внешних тайлов по умолчанию: список и точки работают, а лишние запросы к картографическому сервису не уходят.</p>
+          <div class="info-icon-wrapper info">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <h3>Экономия трафика</h3>
+          <p>На мобильных карта загружается без внешних тайлов по умолчанию: фильтры и точки работают, а лишние запросы к серверам карт не уходят.</p>
+        </article>
+      </section>
+      <div class="modal-actions">
+        <button class="primary-button" value="close" type="submit">Понятно</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="rulesDialog" aria-labelledby="rulesDialogTitle">
+    <form class="modal-body" method="dialog">
+      <header class="modal-head">
+        <div>
+          <h2 id="rulesDialogTitle">Правила размещения отметок</h2>
+          <p>WhiteS работает только если отметки помогают другим людям.</p>
+        </div>
+        <button class="icon-button" value="close" type="submit" aria-label="Закрыть">×</button>
+      </header>
+      <section class="info-grid">
+        <article>
+          <h3>Что можно публиковать</h3>
+          <p>Регион и примерный район, оператора, тип сети, проверенные сервисы (банки, карты, такси, Telegram), время проверки и личную уверенность.</p>
+        </article>
+        <article class="warning">
+          <div class="info-icon-wrapper warning">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4M12 16h.01"/></svg>
+          </div>
+          <h3>Что нельзя публиковать</h3>
+          <p>ФИО, контакты (телефоны/email), точные координаты домов/школ/работы, скриншоты личных кабинетов, призывы к панике или насилию, спам и рекламу.</p>
+        </article>
+        <article>
+          <h3>Модерация записей</h3>
+          <p>Все отчеты проходят премодерацию. Модераторы могут удалить из комментария точные адреса, телефоны и имена перед публикацией.</p>
+        </article>
+      </section>
+      <div class="modal-actions">
+        <button class="primary-button" value="close" type="submit">Понятно</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="privacyDialog" aria-labelledby="privacyDialogTitle">
+    <form class="modal-body" method="dialog">
+      <header class="modal-head">
+        <div>
+          <h2 id="privacyDialogTitle">Политика приватности</h2>
+          <p>Главный принцип WhiteS: собирать минимум данных.</p>
+        </div>
+        <button class="icon-button" value="close" type="submit" aria-label="Закрыть">×</button>
+      </header>
+      <section class="info-grid">
+        <article>
+          <div class="info-icon-wrapper info">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4M12 16h.01"/></svg>
+          </div>
+          <h3>Никакой регистрации</h3>
+          <p>Мы не запрашиваем имена, номера телефонов, email, пароли или аккаунты соцсетей.</p>
+        </article>
+        <article>
+          <h3>Примерная геолокация</h3>
+          <p>Мы не требуем точных GPS-координат. Ставьте точки примерно (центр района или города), избегая указания конкретных домов или маршрутов.</p>
+        </article>
+        <article>
+          <h3>Удаление данных</h3>
+          <p>Если вы заметили в опубликованном отчете конфиденциальные данные, напишите в наши каналы поддержки — мы сразу скроем или исправим эту запись.</p>
         </article>
       </section>
       <div class="modal-actions">

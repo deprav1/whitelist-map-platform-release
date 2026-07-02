@@ -1723,3 +1723,152 @@ button.filter-chip:hover {
   transition: all var(--duration) var(--ease);
   animation: fadeIn 0.4s var(--ease) both;
 }
+
+/* ========================================
+   Form Steps & Progress
+   ======================================== */
+
+.form-progress {
+  width: 100%;
+  height: 4px;
+  background: var(--line);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-block: 8px 12px;
+}
+
+.form-progress-bar {
+  height: 100%;
+  background: var(--brand);
+  transition: width var(--duration-md) var(--ease);
+}
+
+.form-step {
+  display: none;
+}
+
+.form-step.is-active {
+  display: block;
+  animation: fadeIn var(--duration-md) var(--ease) both;
+}
+
+/* Green Shield modal warning */
+.modal-body .modal-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--brand-border);
+  border-radius: var(--radius);
+  background: var(--brand-soft);
+  color: var(--brand-text);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.modal-body .modal-warning svg {
+  flex: 0 0 auto;
+  color: var(--brand);
+  margin-top: 2px;
+}
+
+/* Info Dialog SVG Icon wrappers */
+.info-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  background: var(--brand-soft);
+  color: var(--brand);
+  margin-bottom: 12px;
+}
+
+.info-icon-wrapper.warning {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.info-icon-wrapper.info {
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--blue);
+}
+
+/* Side Drawer FAQ Accordions */
+.faq-accordion-section {
+  padding: 18px 14px;
+  background: var(--surface-soft);
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 8px;
+}
+
+.accordion-item {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+  transition: all var(--duration) var(--ease);
+}
+
+.accordion-item[open] {
+  border-color: var(--brand-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.accordion-item summary {
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-light);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.accordion-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.accordion-item summary::after {
+  content: "+";
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--muted);
+  transition: transform var(--duration) var(--ease);
+}
+
+.accordion-item[open] summary::after {
+  content: "−";
+  color: var(--brand);
+}
+
+.accordion-content {
+  padding: 0 14px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.accordion-content p {
+  margin: 0;
+}
+
+.accordion-content p + p {
+  margin-top: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .accordion-item {
+    background: var(--surface-soft);
+  }
+  .faq-accordion-section {
+    background: #141722;
+  }
+}
+
