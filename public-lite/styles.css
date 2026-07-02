@@ -1872,3 +1872,11 @@ button.filter-chip:hover {
   }
 }
 
+.skeleton-card {
+  padding: 16px 18px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-xs);
+  display: grid;
+  gap: 10px;
+}

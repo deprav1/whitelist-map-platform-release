@@ -1028,6 +1028,8 @@ function renderList(reports) {
     return;
   }
 
+  const fragment = document.createDocumentFragment();
+
   reports.forEach((report) => {
     const node = template.content.cloneNode(true);
     const row = node.querySelector(".report-row");
@@ -1054,7 +1056,11 @@ function renderList(reports) {
     });
 
     row.addEventListener("click", () => selectReport(report.id, true));
-    list.appendChild(node);
+    fragment.appendChild(node);
+  });
+
+  requestAnimationFrame(() => {
+    list.appendChild(fragment);
   });
 }
 

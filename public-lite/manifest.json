@@ -1,0 +1,22 @@
+{
+  "name": "WhiteS — Карта доступности интернета",
+  "short_name": "WhiteS",
+  "description": "Пользовательские отметки о доступности интернета и отключениях в России.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f1117",
+  "theme_color": "#059669",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><circle cx='96' cy='96' r='80' fill='%23059669'/><path d='M96 48v24m0 24v24m-36-36h24m24 0h24' stroke='white' stroke-width='15' stroke-linecap='round'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><circle cx='256' cy='256' r='220' fill='%23059669'/><path d='M256 128v64m0 64v64m-96-96h64m64 0h64' stroke='white' stroke-width='40' stroke-linecap='round'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
