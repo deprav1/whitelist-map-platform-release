@@ -724,7 +724,8 @@ function renderMarkers(reports) {
         weight: isActive ? 3 : 2,
         fillColor: category.color,
         fillOpacity: 0.95,
-        opacity: 1
+        opacity: 1,
+        className: "map-circle-marker"
       });
 
       marker.bindPopup(popupHtml(report));
@@ -764,6 +765,12 @@ function renderSummary(reports) {
   const isDemo = state.data.source?.toLocaleLowerCase("ru").includes("demo") || state.dataUrl.includes("sample");
   $("#dataBadge").textContent = isDemo ? "демо-данные" : "живые данные";
   $("#sourceNote").textContent = `Источник: ${state.data.source || state.dataUrl}. Публично показываются только опубликованные модерацией записи.`;
+
+  const countBadge = $("#tabCount");
+  if (countBadge) {
+    countBadge.textContent = reports.length;
+    countBadge.hidden = reports.length === 0;
+  }
 }
 
 function pluralRu(value, forms) {

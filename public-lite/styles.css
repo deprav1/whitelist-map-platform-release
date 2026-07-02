@@ -584,8 +584,7 @@ textarea:focus-visible {
    Dots & Status colors
    ======================================== */
 
-.dot,
-.row-status {
+.dot {
   display: inline-block;
   flex: 0 0 auto;
   width: 11px;
@@ -991,9 +990,9 @@ button.filter-chip:hover {
 .report-row {
   width: 100%;
   display: grid;
-  grid-template-columns: 16px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
-  padding: 16px 18px;
+  padding: 16px 18px 16px 22px;
   background: var(--surface);
   border: 0;
   border-radius: var(--radius);
@@ -1002,6 +1001,8 @@ button.filter-chip:hover {
   text-align: left;
   transition: all var(--duration) var(--ease);
   animation: fadeIn 0.2s var(--ease) both;
+  overflow: hidden;
+  position: relative;
 }
 
 /* Staggered animation for report rows */
@@ -1024,11 +1025,17 @@ button.filter-chip:hover {
 
 .report-row.is-active {
   background: var(--brand-soft);
-  box-shadow: inset 3px 0 0 var(--brand), var(--shadow-sm);
+  box-shadow: var(--shadow-sm);
 }
 
 .row-status {
-  margin-top: 5px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 6px;
+  border-radius: var(--radius) 0 0 var(--radius);
+  background: var(--gray);
 }
 
 .row-content {
@@ -1670,4 +1677,49 @@ button.filter-chip:hover {
     right: 0;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   }
+}
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  border-radius: var(--radius-full);
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  transition: all var(--duration) var(--ease);
+}
+
+.mobile-tab.is-active .tab-badge {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+.map-silhouette {
+  display: none;
+  position: absolute;
+  top: 10%;
+  left: 5%;
+  width: 90%;
+  height: 80%;
+  pointer-events: none;
+  z-index: 400;
+  color: var(--brand);
+}
+
+@media (prefers-color-scheme: dark) {
+  .map-silhouette {
+    color: var(--brand);
+    opacity: 0.15;
+  }
+}
+
+.map-circle-marker {
+  transition: all var(--duration) var(--ease);
+  animation: fadeIn 0.4s var(--ease) both;
 }
