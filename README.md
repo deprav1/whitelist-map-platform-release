@@ -28,6 +28,7 @@ The first project-specific layer lives in:
 * `docs/SSH_ACCESS_RU.md` - safe SSH key setup and deploy command.
 * `docs/SUBDOMAIN_TIMEWEB_RU.md` - Timeweb subdomain target and deploy path for `whites.kidai.website`.
 * `docs/CURRENT_STATUS_RU.md` - current public URL, deploy commands, and next working backlog.
+* `docs/CONSILIUM_AND_DEVELOPMENT_PLAN_RU.md` - role council, safety rules, and development plan.
 * `public-lite/` - low-bandwidth read-only frontend prototype.
 * `data/public-reports.sample.json` - sample moderated public data.
 * `scripts/validate-public-data.ps1` - validates safe public JSON exports.

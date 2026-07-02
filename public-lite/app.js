@@ -70,11 +70,13 @@ const state = {
   data: fallbackData,
   dataUrl: "embedded fallback",
   map: null,
+  tileLayer: null,
   markerLayer: null,
   radiusLayer: null,
   markers: new Map(),
   selectedId: null,
   searchDebounceId: null,
+  useTiles: true,
   filters: {
     search: "",
     category: "all",
@@ -116,6 +118,7 @@ const precisionRadius = {
 
 const dataSources = ["reports.json", "data/public-reports.json", "reports.sample.json"];
 const cacheKey = "whites:last-public-data";
+const noTilesKey = "whites:no-tiles";
 
 const searchAliases = {
   спб: "санкт-петербург питер петербург",
@@ -241,6 +244,24 @@ function readFiltersFromUrl() {
   });
 }
 
+function readRuntimePreferences() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("notiles") === "1") {
+    state.useTiles = false;
+    return;
+  }
+  const storedNoTiles = localStorage.getItem(noTilesKey);
+  if (storedNoTiles === "1") {
+    state.useTiles = false;
+    return;
+  }
+  if (storedNoTiles === "0") {
+    state.useTiles = true;
+    return;
+  }
+  state.useTiles = !window.matchMedia("(max-width: 720px)").matches;
+}
+
 function writeFiltersToUrl() {
   const params = new URLSearchParams();
   Object.entries(state.filters).forEach(([key, value]) => {
@@ -301,9 +322,12 @@ function setupFilters() {
   });
 
   $("#shareButton").addEventListener("click", shareCurrentView);
+  $("#tileModeButton").addEventListener("click", toggleTileMode);
+  $("#clearLocalButton").addEventListener("click", clearLocalData);
 
   $("#showMapTab").addEventListener("click", () => setMobileView("map"));
   $("#showListTab").addEventListener("click", () => setMobileView("list"));
+  updateTileModeButton();
 }
 
 function updateQuickFilters() {
@@ -320,6 +344,38 @@ function setMobileView(view) {
   if (view === "map" && state.map) {
     setTimeout(() => state.map.invalidateSize(), 40);
   }
+}
+
+function updateTileModeButton() {
+  $("#tileModeButton").textContent = state.useTiles ? "Тайлы вкл" : "Тайлы выкл";
+  $("#tileModeButton").setAttribute("aria-pressed", String(state.useTiles));
+}
+
+function toggleTileMode() {
+  state.useTiles = !state.useTiles;
+  localStorage.setItem(noTilesKey, state.useTiles ? "0" : "1");
+  updateTileModeButton();
+
+  if (!state.map) return;
+  if (state.useTiles) {
+    addTileLayer();
+    $("#tileWarning").hidden = true;
+  } else {
+    if (state.tileLayer) {
+      state.map.removeLayer(state.tileLayer);
+      state.tileLayer = null;
+    }
+    $("#tileWarning").hidden = false;
+  }
+}
+
+function clearLocalData() {
+  localStorage.removeItem(cacheKey);
+  localStorage.removeItem(noTilesKey);
+  $("#clearLocalButton").textContent = "Очищено";
+  setTimeout(() => {
+    $("#clearLocalButton").textContent = "Очистить";
+  }, 1400);
 }
 
 function setupMap() {
@@ -343,6 +399,20 @@ function setupMap() {
     .addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>')
     .addTo(state.map);
 
+  if (state.useTiles) {
+    addTileLayer();
+  } else {
+    $("#tileWarning").hidden = false;
+  }
+
+  state.radiusLayer = L.layerGroup().addTo(state.map);
+  state.markerLayer = L.layerGroup().addTo(state.map);
+  state.map.on("zoomend", () => renderMarkers(getFilteredReports()));
+}
+
+function addTileLayer() {
+  if (!state.map || state.tileLayer) return;
+
   const tiles = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     minZoom: 3,
     maxZoom: 18
@@ -356,9 +426,7 @@ function setupMap() {
   });
 
   tiles.addTo(state.map);
-  state.radiusLayer = L.layerGroup().addTo(state.map);
-  state.markerLayer = L.layerGroup().addTo(state.map);
-  state.map.on("zoomend", () => renderMarkers(getFilteredReports()));
+  state.tileLayer = tiles;
 }
 
 function getFilteredReports() {
@@ -644,8 +712,10 @@ async function shareCurrentView() {
 async function main() {
   await loadData();
   readFiltersFromUrl();
+  readRuntimePreferences();
   setupMap();
   setupFilters();
+  setMobileView(window.matchMedia("(max-width: 720px)").matches ? "list" : "map");
   render({ fit: true });
 }
 

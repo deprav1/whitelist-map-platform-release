@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
+  <meta name="referrer" content="no-referrer">
   <title>WhiteS - карта доступности интернета</title>
   <meta name="description" content="Карта пользовательских отметок о доступности интернета, отключениях и режиме белого списка.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.9.4">
@@ -18,6 +19,8 @@
       </div>
       <div class="top-actions">
         <span class="status-pill" id="dataBadge">демо-данные</span>
+        <button class="ghost-button" id="tileModeButton" type="button">Тайлы выкл</button>
+        <button class="ghost-button" id="clearLocalButton" type="button">Очистить</button>
         <button class="ghost-button" id="resetMapButton" type="button">Россия</button>
         <button class="primary-button" id="shareButton" type="button">Поделиться</button>
       </div>
@@ -76,7 +79,7 @@
         </section>
 
         <div class="tile-warning" id="tileWarning" hidden>
-          Карта загружается без тайлов. Отчеты и фильтры доступны.
+          Карта открыта без внешних тайлов. Отчеты, фильтры и точки доступны.
         </div>
       </section>
 
