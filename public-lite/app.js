@@ -337,6 +337,20 @@ function setupFilters() {
   $("#reportButton").addEventListener("click", openReportDialog);
   $("#drawerReportButton").addEventListener("click", openReportDialog);
   $("#aboutDataButton").addEventListener("click", () => openDialog($("#aboutDialog")));
+
+  $("#overflowToggle").addEventListener("click", (event) => {
+    event.stopPropagation();
+    const menu = $("#overflowMenu");
+    const isOpen = menu.classList.toggle("is-open");
+    $("#overflowToggle").setAttribute("aria-expanded", String(isOpen));
+  });
+
+  document.addEventListener("click", () => {
+    $("#overflowMenu").classList.remove("is-open");
+    $("#overflowToggle").setAttribute("aria-expanded", "false");
+  });
+
+  $("#footerAbout").addEventListener("click", () => openDialog($("#aboutDialog")));
   $("#copyDraftButton").addEventListener("click", copyReportDraft);
   document.querySelectorAll("#reportDraftForm input, #reportDraftForm select, #reportDraftForm textarea").forEach((field) => {
     field.addEventListener("input", updateDraftOutput);
@@ -474,12 +488,14 @@ function toggleTileMode() {
   if (state.useTiles) {
     addTileLayer();
     $("#tileWarning").hidden = true;
+    $(".map-silhouette")?.style && ($(".map-silhouette").style.display = "none");
   } else {
     if (state.tileLayer) {
       state.map.removeLayer(state.tileLayer);
       state.tileLayer = null;
     }
     $("#tileWarning").hidden = false;
+    $(".map-silhouette")?.style && ($(".map-silhouette").style.display = "block");
   }
 }
 
@@ -496,6 +512,8 @@ function clearLocalData() {
 function setupMap() {
   if (!window.L) {
     $("#tileWarning").hidden = false;
+    const silhouette = $(".map-silhouette");
+    if (silhouette) silhouette.style.display = "block";
     return;
   }
 
@@ -518,6 +536,7 @@ function setupMap() {
     addTileLayer();
   } else {
     $("#tileWarning").hidden = false;
+    $(".map-silhouette")?.style && ($(".map-silhouette").style.display = "block");
   }
 
   state.radiusLayer = L.layerGroup().addTo(state.map);

@@ -5,26 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#059669">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="WhiteS — карта доступности интернета">
+  <meta property="og:description" content="Пользовательские отметки о доступности интернета, отключениях и режиме белого списка в России.">
+  <meta property="og:url" content="https://kidai.website/whites/">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23059669'/><path d='M16 8v4m0 4v4m-6-6h4m4 0h4' stroke='white' stroke-width='2.5' stroke-linecap='round'/></svg>">
   <title>WhiteS - карта доступности интернета</title>
   <meta name="description" content="Карта пользовательских отметок о доступности интернета, отключениях и режиме белого списка.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.9.4">
-  <link rel="stylesheet" href="styles.css?v=20260702-ux2">
+  <link rel="stylesheet" href="styles.css?v=20260702-redesign">
 </head>
 <body>
   <div class="app-shell">
     <div class="sr-only" id="liveRegion" aria-live="polite"></div>
     <header class="topbar">
       <div class="brand-lockup">
-        <span class="brand">WhiteS</span>
+        <span class="brand"><svg class="brand-icon" viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="2" opacity=".6"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>WhiteS</span>
         <span class="tagline">Карта доступности интернета</span>
       </div>
       <div class="top-actions">
         <span class="status-pill" id="dataBadge">демо-данные</span>
-        <button class="ghost-button" id="tileModeButton" type="button">Тайлы выкл</button>
-        <button class="ghost-button" id="clearLocalButton" type="button">Очистить</button>
-        <button class="ghost-button" id="resetMapButton" type="button">Россия</button>
         <button class="primary-button" id="reportButton" type="button">Сообщить</button>
         <button class="primary-button" id="shareButton" type="button">Поделиться</button>
+        <button class="overflow-toggle" id="overflowToggle" type="button" aria-label="Ещё" aria-expanded="false">⋮</button>
+        <div class="overflow-menu" id="overflowMenu">
+          <button class="ghost-button" id="tileModeButton" type="button">Тайлы выкл</button>
+          <button class="ghost-button" id="resetMapButton" type="button">Россия</button>
+          <button class="ghost-button" id="clearLocalButton" type="button">Очистить кэш</button>
+        </div>
       </div>
     </header>
 
@@ -35,7 +44,11 @@
 
     <main class="map-layout">
       <section class="map-stage" aria-label="Карта отчетов">
-        <div class="map-canvas" id="map"></div>
+        <div class="map-canvas" id="map">
+          <svg class="map-silhouette" viewBox="20 35 150 70" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <path d="M30 65 Q35 55 45 52 Q55 48 65 50 Q72 45 80 44 Q88 42 95 45 Q100 42 108 43 Q115 40 125 42 Q135 38 145 40 Q155 42 162 48 Q165 55 160 60 Q155 65 148 62 Q140 58 135 60 Q128 65 120 63 Q112 60 105 62 Q98 65 90 63 Q82 58 75 60 Q68 65 60 63 Q52 60 45 62 Q38 65 33 68 Z" fill="currentColor" opacity="0.04"/>
+          </svg>
+        </div>
 
         <section class="filters-panel" aria-label="Фильтры">
           <label class="search-field">
@@ -137,6 +150,17 @@
         <section class="reports-list" id="reportsList" aria-label="Последние отметки"></section>
       </aside>
     </main>
+    <footer class="app-footer">
+      <div class="footer-content">
+        <span>WhiteS · Карта доступности интернета</span>
+        <nav class="footer-links">
+          <button class="text-button" id="footerAbout" type="button">О данных</button>
+          <button class="text-button" id="footerRules" type="button">Правила</button>
+          <button class="text-button" id="footerPrivacy" type="button">Приватность</button>
+        </nav>
+        <small>Отметки пользователей, не официальные данные. Проверяйте свежесть и уровень уверенности.</small>
+      </div>
+    </footer>
   </div>
 
   <template id="reportTemplate">
@@ -262,6 +286,6 @@
   </dialog>
 
   <script src="vendor/leaflet/leaflet.js?v=1.9.4"></script>
-  <script src="app.js?v=20260702-ux2"></script>
+  <script src="app.js?v=20260702-redesign"></script>
 </body>
 </html>
