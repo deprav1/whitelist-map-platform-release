@@ -580,7 +580,7 @@ function setupMap() {
   L.control.zoom({ position: "bottomright" }).addTo(state.map);
   L.control
     .attribution({ prefix: false, position: "bottomleft" })
-    .addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>')
+    .addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>')
     .addTo(state.map);
 
   if (state.useTiles) {
@@ -598,9 +598,10 @@ function setupMap() {
 function addTileLayer() {
   if (!state.map || state.tileLayer) return;
 
-  const tiles = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  const tiles = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
     minZoom: 3,
-    maxZoom: 18
+    maxZoom: 18,
+    subdomains: 'abcd'
   });
 
   let tileErrorShown = false;
