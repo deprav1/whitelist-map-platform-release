@@ -9,3 +9,9 @@ tmp
 deployment.env
 codeship.aes
 docker.env
+
+# testing and agent artifacts
+node_modules/
+test-results/
+.agents/
+
