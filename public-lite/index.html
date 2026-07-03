@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="dark">
   <meta name="referrer" content="no-referrer">
-  <meta name="theme-color" content="#059669">
+  <meta name="theme-color" content="#0f1117">
   <meta property="og:type" content="website">
   <meta property="og:title" content="WhiteS — карта доступности интернета">
   <meta property="og:description" content="Пользовательские отметки о доступности интернета, отключениях и режиме белого списка в России.">
@@ -283,10 +283,19 @@
               <option>Не уверен</option>
             </select>
           </label>
-          <label class="wide-field">
-            <span>Что проверяли (через запятую)</span>
-            <input id="draftServices" name="services" placeholder="Карты, банки, такси, Telegram">
-          </label>
+          <div class="wide-field">
+            <span>Что проверяли</span>
+            <div class="service-pills" id="servicePillsContainer">
+              <button class="service-pill" type="button" data-value="Telegram">Telegram</button>
+              <button class="service-pill" type="button" data-value="YouTube">YouTube</button>
+              <button class="service-pill" type="button" data-value="WhatsApp">WhatsApp</button>
+              <button class="service-pill" type="button" data-value="Банки">Банки</button>
+              <button class="service-pill" type="button" data-value="Госуслуги">Госуслуги</button>
+              <button class="service-pill" type="button" data-value="VPN">VPN</button>
+              <button class="service-pill" type="button" data-value="Такси/Карты">Такси/Карты</button>
+            </div>
+            <input id="draftServices" type="hidden" name="services" value="">
+          </div>
         </div>
       </div>
 
@@ -313,7 +322,7 @@
         <button class="ghost-button" id="prevStepButton" type="button" style="display: none;">Назад</button>
         <button class="primary-button" id="nextStepButton" type="button">Далее</button>
         <button class="ghost-button" id="copyDraftButton" type="button" style="display: none;">Скопировать черновик</button>
-        <button class="primary-button" id="submitFormButton" value="close" type="submit" style="display: none;">Готово</button>
+        <button class="primary-button" id="submitFormButton" type="button" style="display: none;">Отправить в Telegram</button>
       </div>
     </form>
   </dialog>

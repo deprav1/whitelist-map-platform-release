@@ -380,6 +380,35 @@ function setupFilters() {
     }
   });
   $("#copyDraftButton").addEventListener("click", copyReportDraft);
+
+  $("#submitFormButton").addEventListener("click", () => {
+    const draftText = $("#draftOutput").value;
+    const botUrl = `https://t.me/WhiteS_Bot?text=${encodeURIComponent(draftText)}`;
+    window.open(botUrl, '_blank');
+    const dialog = $("#reportDialog");
+    if (dialog) {
+      if (dialog.close) dialog.close();
+      else dialog.removeAttribute("open");
+    }
+  });
+
+  const servicesInput = $("#draftServices");
+  const pillsContainer = $("#servicePillsContainer");
+  if (pillsContainer) {
+    pillsContainer.addEventListener("click", (event) => {
+      const button = event.target.closest(".service-pill");
+      if (!button) return;
+      
+      button.classList.toggle("is-active");
+      
+      const activePills = pillsContainer.querySelectorAll(".service-pill.is-active");
+      const values = Array.from(activePills).map(pill => pill.dataset.value);
+      servicesInput.value = values.join(", ");
+      
+      updateDraftOutput();
+    });
+  }
+
   document.querySelectorAll("#reportDraftForm input, #reportDraftForm select, #reportDraftForm textarea").forEach((field) => {
     field.addEventListener("input", updateDraftOutput);
     field.addEventListener("change", updateDraftOutput);
@@ -1129,6 +1158,12 @@ async function main() {
   setupFilters();
   setMobileView(window.matchMedia("(max-width: 720px)").matches ? "list" : "map");
   render({ fit: true });
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }
 }
 
 main();

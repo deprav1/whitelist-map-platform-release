@@ -6,42 +6,42 @@
   /* Шрифт — системный стек */
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
-  /* Цвета — тёплый и уверенный */
-  --bg: #f4f5f7;
-  --surface: #ffffff;
-  --surface-soft: #f9fafb;
-  --surface-muted: #f1f3f5;
-  --ink: #111827;
-  --ink-light: #374151;
-  --muted: #6b7280;
-  --faint: #9ca3af;
-  --line: #e5e7eb;
-  --line-soft: #f3f4f6;
+  /* Цвета — Dark SaaS с прозрачной иерархией */
+  --bg: #0f1117;
+  --surface: rgba(255, 255, 255, 0.03);
+  --surface-soft: rgba(255, 255, 255, 0.05);
+  --surface-muted: rgba(255, 255, 255, 0.08);
+  --ink: #f3f4f6;
+  --ink-light: #d1d5db;
+  --muted: #9ca3af;
+  --faint: #6b7280;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-soft: rgba(255, 255, 255, 0.04);
 
   /* Бренд */
-  --brand: #059669;
-  --brand-hover: #047857;
-  --brand-soft: #ecfdf5;
-  --brand-border: #a7f3d0;
-  --brand-text: #065f46;
+  --brand: #10b981;
+  --brand-hover: #059669;
+  --brand-soft: rgba(16, 185, 129, 0.1);
+  --brand-border: rgba(16, 185, 129, 0.25);
+  --brand-text: #6ee7b7;
 
   /* Статусы */
-  --red: #dc2626;
-  --red-soft: #fef2f2;
-  --amber: #d97706;
-  --amber-soft: #fffbeb;
-  --orange: #ea580c;
-  --orange-soft: #fff7ed;
-  --green: #16a34a;
-  --green-soft: #f0fdf4;
-  --gray: #6b7280;
+  --red: #ef4444;
+  --red-soft: rgba(239, 68, 68, 0.1);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245, 158, 11, 0.1);
+  --orange: #f97316;
+  --orange-soft: rgba(249, 115, 22, 0.1);
+  --green: #22c55e;
+  --green-soft: rgba(34, 197, 94, 0.1);
+  --gray: #9ca3af;
 
   /* Тени — многослойные, мягкие */
-  --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.05);
-  --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.05);
-  --shadow-lg: 0 20px 40px -4px rgba(0,0,0,0.12);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.35), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 20px 40px -4px rgba(0, 0, 0, 0.45);
 
   /* Форма */
   --radius-sm: 6px;
@@ -56,49 +56,8 @@
   --duration-md: 0.25s;
 
   /* Обратная совместимость — алиасы для старых переменных */
-  --green-dark: var(--brand-hover);
-  --blue: #2d6cdf;
-}
-
-/* Тёмная тема */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --surface-soft: #1f2330;
-    --surface-muted: #252935;
-    --ink: #f3f4f6;
-    --ink-light: #d1d5db;
-    --muted: #9ca3af;
-    --faint: #6b7280;
-    --line: #2d3344;
-    --line-soft: #232736;
-
-    --brand: #10b981;
-    --brand-hover: #059669;
-    --brand-soft: rgba(16,185,129,0.1);
-    --brand-border: rgba(16,185,129,0.25);
-    --brand-text: #6ee7b7;
-
-    --red: #ef4444;
-    --red-soft: rgba(239,68,68,0.1);
-    --amber: #f59e0b;
-    --amber-soft: rgba(245,158,11,0.1);
-    --orange: #f97316;
-    --orange-soft: rgba(249,115,22,0.1);
-    --green: #22c55e;
-    --green-soft: rgba(34,197,94,0.1);
-    --gray: #9ca3af;
-
-    --shadow-xs: 0 1px 2px rgba(0,0,0,0.2);
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
-    --shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
-    --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.35), 0 4px 6px -4px rgba(0,0,0,0.2);
-    --shadow-lg: 0 20px 40px -4px rgba(0,0,0,0.45);
-
-    --green-dark: var(--brand-text);
-    --blue: #60a5fa;
-  }
+  --green-dark: var(--brand-text);
+  --blue: #60a5fa;
 }
 
 /* ========================================
@@ -395,34 +354,32 @@ textarea:focus-visible {
 
 .cluster-marker.shutdown {
   background: var(--red);
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.7);
-  animation: pulseNeonRed 2s ease-in-out infinite;
+  animation: pulseNeonRed 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .cluster-marker.whitelist {
   background: var(--amber);
-  box-shadow: 0 0 15px rgba(245, 158, 11, 0.7);
-  animation: pulseNeonAmber 2s ease-in-out infinite;
+  animation: pulseNeonAmber 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .cluster-marker.partial {
   background: var(--orange);
-  box-shadow: 0 0 15px rgba(249, 115, 22, 0.6);
 }
 
 .cluster-marker.restored {
   background: var(--green);
-  box-shadow: 0 0 15px rgba(34, 197, 94, 0.6);
 }
 
 @keyframes pulseNeonRed {
-  0%, 100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.6), 0 0 0 0 rgba(239, 68, 68, 0.4); }
-  50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.8), 0 0 0 8px rgba(239, 68, 68, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
 @keyframes pulseNeonAmber {
-  0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.6), 0 0 0 0 rgba(245, 158, 11, 0.4); }
-  50% { box-shadow: 0 0 25px rgba(245, 158, 11, 0.8), 0 0 0 8px rgba(245, 158, 11, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5); }
+  70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
 }
 
 /* ========================================
@@ -471,19 +428,14 @@ textarea:focus-visible {
   gap: 8px;
   align-items: end;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(15, 17, 23, 0.65);
   backdrop-filter: blur(24px) saturate(150%);
   -webkit-backdrop-filter: blur(24px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-}
-
-@media (prefers-color-scheme: dark) {
-  .filters-panel {
-    background: rgba(15, 17, 23, 0.75);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.15),
+    0 24px 48px rgba(0, 0, 0, 0.4);
 }
 
 .search-field {
@@ -669,22 +621,17 @@ textarea:focus-visible {
   max-height: calc(100vh - 100px);
   overflow-y: auto;
   overflow-x: hidden;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(15, 17, 23, 0.65);
   backdrop-filter: blur(24px) saturate(150%);
   -webkit-backdrop-filter: blur(24px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.15),
+    0 24px 48px rgba(0, 0, 0, 0.4);
   z-index: 1000;
   display: flex;
   flex-direction: column;
-}
-
-@media (prefers-color-scheme: dark) {
-  .report-drawer {
-    background: rgba(15, 17, 23, 0.75);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
 }
 
 /* ========================================
@@ -1178,6 +1125,37 @@ button.filter-chip:hover {
   gap: 16px;
   padding: 22px;
   background: var(--surface);
+}
+
+.service-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.service-pill {
+  padding: 8px 14px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-full);
+  color: var(--ink-light);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease);
+}
+
+.service-pill:hover {
+  background: var(--surface-muted);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.service-pill.is-active {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--brand-text);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
 }
 
 .modal-head {
@@ -1895,13 +1873,11 @@ button.filter-chip:hover {
   margin-top: 8px;
 }
 
-@media (prefers-color-scheme: dark) {
-  .accordion-item {
-    background: var(--surface-soft);
-  }
-  .faq-accordion-section {
-    background: #141722;
-  }
+.accordion-item {
+  background: var(--surface-soft);
+}
+.faq-accordion-section {
+  background: rgba(15, 17, 23, 0.5); /* В стеклянном стиле */
 }
 
 .skeleton-card {
@@ -1911,4 +1887,41 @@ button.filter-chip:hover {
   box-shadow: var(--shadow-xs);
   display: grid;
   gap: 10px;
+}
+
+/* Кастомный скроллбар под стекло */
+.report-drawer::-webkit-scrollbar {
+  width: 5px;
+}
+.report-drawer::-webkit-scrollbar-track {
+  background: transparent;
+}
+.report-drawer::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-full);
+}
+.report-drawer::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Микро-анимации при нажатии (тактильный отклик) */
+.primary-button:active, 
+.ghost-button:active, 
+.report-row:active,
+.quick-filter:active,
+.mobile-tab:active {
+  transform: scale(0.97);
+  transition: transform 0.08s var(--ease);
+}
+
+/* Плавный ховер на карточки */
+.report-row {
+  border: 1px solid transparent;
+  transition: transform var(--duration) var(--ease), background var(--duration) var(--ease), border-color var(--duration) var(--ease);
+}
+
+.report-row:hover {
+  transform: translateY(-1px);
+  background: var(--surface-soft);
+  border-color: rgba(255, 255, 255, 0.05);
 }
