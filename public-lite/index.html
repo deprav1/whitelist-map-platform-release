@@ -29,7 +29,7 @@
   <title>WhiteS — карта доступности интернета в России</title>
   <meta name="description" content="WhiteS показывает публичные модерируемые отметки об отключениях интернета, режиме белого списка, частичных сбоях сервисов и восстановлении доступа.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.9.4">
-  <link rel="stylesheet" href="styles.css?v=20260703-uxa">
+  <link rel="stylesheet" href="styles.css?v=20260703-uxb">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -110,9 +110,20 @@
     <main class="map-layout">
       <section class="map-stage" aria-label="Карта отчетов">
         <div class="map-canvas" id="map">
-          <svg class="map-silhouette" viewBox="20 35 150 70" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            <path d="M30 65 Q35 55 45 52 Q55 48 65 50 Q72 45 80 44 Q88 42 95 45 Q100 42 108 43 Q115 40 125 42 Q135 38 145 40 Q155 42 162 48 Q165 55 160 60 Q155 65 148 62 Q140 58 135 60 Q128 65 120 63 Q112 60 105 62 Q98 65 90 63 Q82 58 75 60 Q68 65 60 63 Q52 60 45 62 Q38 65 33 68 Z" fill="currentColor" opacity="0.04"/>
+          <svg class="map-silhouette" viewBox="0 0 200 110" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <!-- Схематичный фон: сетка градусов + обобщённый контур макрозоны -->
+            <g class="map-graticule" fill="none" stroke="currentColor" stroke-width="0.4" opacity="0.35">
+              <line x1="0" y1="27" x2="200" y2="27"/>
+              <line x1="0" y1="55" x2="200" y2="55"/>
+              <line x1="0" y1="83" x2="200" y2="83"/>
+              <line x1="40" y1="0" x2="40" y2="110"/>
+              <line x1="80" y1="0" x2="80" y2="110"/>
+              <line x1="120" y1="0" x2="120" y2="110"/>
+              <line x1="160" y1="0" x2="160" y2="110"/>
+            </g>
+            <path class="map-landmass" d="M18 62 Q30 46 52 44 Q72 40 92 45 Q108 38 128 41 Q152 36 176 44 Q190 49 184 60 Q176 70 160 66 Q144 62 132 66 Q116 72 100 68 Q84 62 70 66 Q54 72 40 68 Q26 66 18 62 Z" fill="currentColor" opacity="0.1" stroke="currentColor" stroke-opacity="0.25" stroke-width="0.6"/>
           </svg>
+          <div class="map-schematic-note" id="mapSchematicNote" hidden>Облегчённая карта · точки и данные — в списке ниже</div>
         </div>
 
         <section class="filters-panel" aria-label="Фильтры">
@@ -573,6 +584,6 @@
   </dialog>
 
   <script src="vendor/leaflet/leaflet.js?v=1.9.4"></script>
-  <script src="app.js?v=20260703-uxa"></script>
+  <script src="app.js?v=20260703-uxb"></script>
 </body>
 </html>

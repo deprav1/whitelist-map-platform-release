@@ -1055,6 +1055,15 @@ function updateTileModeButton() {
   $("#tileModeButton").setAttribute("aria-pressed", String(state.useTiles));
 }
 
+// Показать/скрыть схематичный фон карты (силуэт + подпись) в облегчённом режиме,
+// чтобы карта без тайлов читалась как намеренная схема, а не как сломанная.
+function setSchematicVisible(visible) {
+  const silhouette = $(".map-silhouette");
+  if (silhouette) silhouette.style.display = visible ? "block" : "none";
+  const note = $("#mapSchematicNote");
+  if (note) note.hidden = !visible;
+}
+
 function setTileWarning(message) {
   const warning = $("#tileWarning");
   if (!warning) return;
@@ -1085,14 +1094,14 @@ function toggleTileMode() {
   if (state.useTiles) {
     addTileLayer();
     $("#tileWarning").hidden = true;
-    $(".map-silhouette")?.style && ($(".map-silhouette").style.display = "none");
+    setSchematicVisible(false);
   } else {
     if (state.tileLayer) {
       state.map.removeLayer(state.tileLayer);
       state.tileLayer = null;
     }
     setTileWarning("Фон карты отключен: это экономит трафик и уменьшает внешние запросы. Список, фильтры и точки продолжают работать.");
-    $(".map-silhouette")?.style && ($(".map-silhouette").style.display = "block");
+    setSchematicVisible(true);
   }
 }
 
@@ -1109,8 +1118,7 @@ function clearLocalData() {
 function setupMap() {
   if (!window.L) {
     setTileWarning("Карта открыта в облегченном режиме: список, фильтры и точки доступны без внешнего фона.");
-    const silhouette = $(".map-silhouette");
-    if (silhouette) silhouette.style.display = "block";
+    setSchematicVisible(true);
     return;
   }
 
@@ -1133,7 +1141,7 @@ function setupMap() {
     addTileLayer();
   } else {
     setTileWarning("Фон карты отключен: это экономит трафик и уменьшает внешние запросы. Список, фильтры и точки продолжают работать.");
-    $(".map-silhouette")?.style && ($(".map-silhouette").style.display = "block");
+    setSchematicVisible(true);
   }
 
   state.radiusLayer = L.layerGroup().addTo(state.map);

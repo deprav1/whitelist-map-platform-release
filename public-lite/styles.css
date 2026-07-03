@@ -2101,14 +2101,35 @@ button.filter-chip:hover {
 .map-silhouette {
   display: none;
   position: absolute;
-  top: 10%;
-  left: 5%;
-  width: 90%;
-  height: 80%;
+  top: 8%;
+  left: 4%;
+  width: 92%;
+  height: 84%;
   pointer-events: none;
   z-index: 400;
   color: var(--brand);
-  opacity: 0.15;
+  opacity: 0.5;
+}
+
+.map-schematic-note {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 401;
+  pointer-events: none;
+  max-width: 90%;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--brand-border);
+  background: rgba(15, 17, 23, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .map-circle-marker {
