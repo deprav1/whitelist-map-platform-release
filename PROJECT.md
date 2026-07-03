@@ -22,6 +22,14 @@ WhiteS is a single-page static web application (SPA) located in the `public-lite
 `.agents/roadmap/README.md` (индекс) + `00-foundation.md` … `04-scale-trust.md`.
 Milestones 2–4 выше поглощаются этапами 0–1 роадмапа (R1.1/R1.2 → бриф 01, R1.3/R2 → бриф 00).
 
+## Operating Workflows
+
+Перед новой итерацией использовать `docs/WORKFLOWS_AND_SKILLS_RU.md`. Там закреплены workflow для UX, публичных данных, модерации, деплоя, инцидентов, roadmap и консилиума агентов, а также локальный Codex skill:
+
+```text
+C:\Users\Lenovo\.codex\skills\whites-project
+```
+
 ## Code Layout
 - `public-lite/index.html` - HTML core structure and modals.
 - `public-lite/app.js` - JS logic, maps, and UI events.
