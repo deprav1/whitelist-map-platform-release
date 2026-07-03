@@ -28,7 +28,7 @@
   <title>WhiteS - карта доступности интернета</title>
   <meta name="description" content="Карта пользовательских отметок о доступности интернета, отключениях и режиме белого списка.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.9.4">
-  <link rel="stylesheet" href="styles.css?v=20260703-dark">
+  <link rel="stylesheet" href="styles.css?v=20260703-ux2">
 </head>
 <body>
   <div class="app-shell">
@@ -42,18 +42,18 @@
         <span class="status-pill" id="dataBadge">публичные данные</span>
         <button class="primary-button" id="reportButton" type="button">Сообщить</button>
         <button class="primary-button" id="shareButton" type="button">Поделиться</button>
-        <button class="overflow-toggle" id="overflowToggle" type="button" aria-label="Ещё" aria-expanded="false">⋮</button>
+        <button class="overflow-toggle" id="overflowToggle" type="button" aria-label="Ещё" aria-expanded="false" aria-controls="overflowMenu">⋮</button>
         <div class="overflow-menu" id="overflowMenu">
-          <button class="ghost-button" id="tileModeButton" type="button">Тайлы выкл</button>
+          <button class="ghost-button" id="tileModeButton" type="button">Фон карты выкл</button>
           <button class="ghost-button" id="resetMapButton" type="button">Россия</button>
           <button class="ghost-button" id="clearLocalButton" type="button">Очистить кэш</button>
         </div>
       </div>
     </header>
 
-    <nav class="mobile-tabs" aria-label="Переключение вида" role="tablist">
-      <button class="mobile-tab is-active" id="showMapTab" type="button" role="tab" aria-selected="true">Карта</button>
-      <button class="mobile-tab" id="showListTab" type="button" role="tab" aria-selected="false">Список <span id="tabCount" class="tab-badge" hidden>0</span></button>
+    <nav class="mobile-tabs" aria-label="Переключение вида">
+      <button class="mobile-tab is-active" id="showMapTab" type="button" aria-pressed="true">Карта</button>
+      <button class="mobile-tab" id="showListTab" type="button" aria-pressed="false">Список <span id="tabCount" class="tab-badge" hidden>0</span></button>
     </nav>
 
     <main class="map-layout">
@@ -107,8 +107,8 @@
           <span><i class="dot restored"></i>восстановлено</span>
         </section>
 
-        <div class="tile-warning" id="tileWarning" hidden>
-          Карта открыта без внешних тайлов. Отчеты, фильтры и точки доступны.
+        <div class="tile-warning" id="tileWarning" role="status" aria-live="polite" hidden>
+          Фон карты отключен: это экономит трафик и уменьшает внешние запросы. Список, фильтры и точки продолжают работать.
         </div>
       </section>
 
@@ -160,8 +160,8 @@
           <div class="operator-pulse" id="operatorPulse"></div>
         </section>
 
-        <section class="active-filters" id="activeFilters" aria-label="Активные filters"></section>
-        <section class="reports-list" id="reportsList" aria-label="Последние отметки">
+        <section class="active-filters" id="activeFilters" aria-label="Активные фильтры"></section>
+        <section class="reports-list" id="reportsList" aria-label="Последние отметки" aria-live="polite" aria-busy="true">
           <div class="skeleton-card">
             <div class="skeleton-line" style="width: 40%"></div>
             <div class="skeleton-line" style="width: 85%"></div>
@@ -235,13 +235,13 @@
       <header class="modal-head">
         <div>
           <h2 id="reportDialogTitle">Сообщить наблюдение</h2>
-          <p>Форма пока готовит безопасный черновик и не отправляет данные автоматически.</p>
+          <p>Форма не сохраняет введенное на этом сайте. На последнем шаге можно скопировать текст или открыть Telegram-бота с готовым черновиком.</p>
         </div>
         <button class="icon-button" value="close" type="submit" aria-label="Закрыть">×</button>
       </header>
 
       <div class="form-progress" aria-label="Прогресс заполнения формы">
-        <div class="form-progress-bar" id="formProgressBar" style="width: 33.3%"></div>
+        <div class="form-progress-bar" id="formProgressBar" role="progressbar" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1" aria-label="Шаг 1 из 3" style="width: 33.3%"></div>
       </div>
 
       <section class="modal-warning">
@@ -250,7 +250,7 @@
       </section>
 
       <!-- Шаг 1: Локация и оператор -->
-      <div class="form-step is-active" data-step="1">
+      <div class="form-step is-active" data-step="1" aria-hidden="false">
         <div class="report-form-grid">
           <label>
             <span>Город или район</span>
@@ -274,7 +274,7 @@
       </div>
 
       <!-- Шаг 2: Проблема и сервисы -->
-      <div class="form-step" data-step="2">
+      <div class="form-step" data-step="2" aria-hidden="true">
         <div class="report-form-grid">
           <label>
             <span>Проблема</span>
@@ -309,7 +309,7 @@
             </div>
             <label class="service-other-field">
               <span>Другое</span>
-              <input id="draftServicesOther" type="text" name="services_other" autocomplete="off" placeholder="Например: маркетплейс, почта, рабочий VPN">
+              <input id="draftServicesOther" type="text" name="services_other" autocomplete="off" placeholder="Например: маркетплейс, почта, рабочий сервис">
             </label>
             <input id="draftServices" type="hidden" name="services" value="">
           </div>
@@ -317,7 +317,7 @@
       </div>
 
       <!-- Шаг 3: Детали и черновик -->
-      <div class="form-step" data-step="3">
+      <div class="form-step" data-step="3" aria-hidden="true">
         <div class="report-form-grid">
           <label class="wide-field">
             <span>Короткий комментарий</span>
@@ -329,6 +329,7 @@
         <ul class="privacy-checklist" aria-label="Проверка безопасности перед отправкой">
           <li>Пишите район или город, а не точный адрес.</li>
           <li>Описывайте проверенные сервисы, а не личные действия.</li>
+          <li>Не добавляйте названия, ссылки, ключи или инструкции для VPN/прокси.</li>
           <li>Перед публикацией запись должна пройти модерацию.</li>
         </ul>
 
@@ -339,7 +340,7 @@
         <button class="ghost-button" id="prevStepButton" type="button" style="display: none;">Назад</button>
         <button class="primary-button" id="nextStepButton" type="button">Далее</button>
         <button class="ghost-button" id="copyDraftButton" type="button" style="display: none;">Скопировать черновик</button>
-        <button class="primary-button" id="submitFormButton" type="button" style="display: none;">Отправить в Telegram</button>
+        <button class="primary-button" id="submitFormButton" type="button" style="display: none;">Открыть Telegram с черновиком</button>
       </div>
     </form>
   </dialog>
@@ -373,7 +374,7 @@
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
           <h3>Экономия трафика</h3>
-          <p>На мобильных карта загружается без внешних тайлов по умолчанию: фильтры и точки работают, а лишние запросы к серверам карт не уходят.</p>
+          <p>На мобильных карта загружается без внешнего фона по умолчанию: фильтры и точки работают, а лишние запросы к серверам карт не уходят.</p>
         </article>
       </section>
       <div class="modal-actions">
@@ -401,7 +402,7 @@
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4M12 16h.01"/></svg>
           </div>
           <h3>Что нельзя публиковать</h3>
-          <p>ФИО, контакты (телефоны/email), точные координаты домов/школ/работы, скриншоты личных кабинетов, призывы к панике или насилию, спам и рекламу.</p>
+          <p>ФИО, контакты (телефоны/email), точные координаты домов/школ/работы, скриншоты личных кабинетов, названия и ссылки на VPN/прокси, призывы к панике или насилию, спам и рекламу.</p>
         </article>
         <article>
           <h3>Модерация записей</h3>
@@ -436,6 +437,10 @@
           <p>Мы не требуем точных GPS-координат. Ставьте точки примерно (центр района или города), избегая указания конкретных домов или маршрутов.</p>
         </article>
         <article>
+          <h3>Локальный кэш</h3>
+          <p>Браузер может сохранить последний публичный снимок карты и настройку фона, чтобы WhiteS открывался быстрее и работал при плохой связи. Это можно очистить кнопкой «Очистить кэш».</p>
+        </article>
+        <article>
           <h3>Удаление данных</h3>
           <p>Если вы заметили в опубликованном отчете конфиденциальные данные, напишите в наши каналы поддержки — мы сразу скроем или исправим эту запись.</p>
         </article>
@@ -447,6 +452,6 @@
   </dialog>
 
   <script src="vendor/leaflet/leaflet.js?v=1.9.4"></script>
-  <script src="app.js?v=20260703-public"></script>
+  <script src="app.js?v=20260703-ux2"></script>
 </body>
 </html>

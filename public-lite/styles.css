@@ -116,6 +116,15 @@ body {
   body * {
     forced-color-adjust: auto;
   }
+
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  .accordion-item summary:focus-visible {
+    outline: 2px solid Highlight;
+    box-shadow: none;
+  }
 }
 
 html.no-backdrop-filter .topbar,
@@ -217,10 +226,13 @@ textarea:focus-visible {
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: var(--brand-text);
   font-size: 26px;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .tagline {
@@ -464,17 +476,17 @@ textarea:focus-visible {
   position: absolute;
   top: 80px;
   right: 20px;
-  width: 360px;
+  width: min(460px, calc(100vw - 40px));
   z-index: 1000;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   align-items: end;
   padding: 16px;
-  background: rgba(15, 17, 23, 0.65);
-  backdrop-filter: blur(24px) saturate(150%);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(15, 17, 23, 0.84);
+  backdrop-filter: blur(20px) saturate(145%);
+  -webkit-backdrop-filter: blur(20px) saturate(145%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-xl);
   box-shadow: 
     inset 0 1px 1px rgba(255, 255, 255, 0.15),
@@ -482,17 +494,23 @@ textarea:focus-visible {
 }
 
 .search-field {
-  grid-column: span 2;
+  grid-column: 1 / -1;
 }
 
 .quick-filters {
-  grid-column: span 3;
+  grid-column: 1 / -1;
   min-height: 38px;
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
-  overflow: visible;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.quick-filters::-webkit-scrollbar {
+  display: none;
 }
 
 .quick-filter {
@@ -659,10 +677,10 @@ textarea:focus-visible {
   max-height: calc(100vh - 100px);
   overflow-y: auto;
   overflow-x: hidden;
-  background: rgba(15, 17, 23, 0.65);
-  backdrop-filter: blur(24px) saturate(150%);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(15, 17, 23, 0.84);
+  backdrop-filter: blur(20px) saturate(145%);
+  -webkit-backdrop-filter: blur(20px) saturate(145%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-xl);
   box-shadow: 
     inset 0 1px 1px rgba(255, 255, 255, 0.15),
@@ -709,9 +727,10 @@ textarea:focus-visible {
 
 .summary-panel span {
   color: var(--ink);
-  font-size: 36px;
+  font-size: 30px;
   font-weight: 800;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .summary-panel strong {
@@ -1422,7 +1441,7 @@ button.filter-chip:hover {
   z-index: 100;
   min-width: 180px;
   padding: 6px;
-  background: rgba(15, 17, 23, 0.72);
+  background: rgba(15, 17, 23, 0.92);
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
   border: 1px solid var(--line);
@@ -1605,24 +1624,31 @@ button.filter-chip:hover {
     order: 2;
   }
 
-  #tileModeButton {
+  #shareButton {
     order: 3;
   }
 
-  #shareButton {
+  .overflow-toggle {
     order: 4;
   }
 
+  #tileModeButton {
+    order: 1;
+  }
+
   #resetMapButton {
-    order: 5;
+    order: 2;
   }
 
   #clearLocalButton {
-    order: 6;
+    order: 3;
   }
 
   .map-stage {
-    min-height: 68vh;
+    position: relative;
+    inset: auto;
+    height: calc(100vh - 178px);
+    min-height: 560px;
   }
 
   body.show-list .map-stage {
@@ -1631,6 +1657,20 @@ button.filter-chip:hover {
 
   body.show-map .report-drawer {
     display: none;
+  }
+
+  .report-drawer {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    min-height: calc(100vh - 118px);
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    box-shadow: none;
   }
 
   .filters-panel {
@@ -1685,7 +1725,7 @@ button.filter-chip:hover {
   .tile-warning {
     left: 10px;
     right: 10px;
-    bottom: 62px;
+    bottom: 96px;
     max-width: none;
   }
 
@@ -1699,7 +1739,7 @@ button.filter-chip:hover {
   }
 
   .summary-panel span {
-    font-size: 28px;
+    font-size: 24px;
   }
 
   .drawer-head {
@@ -1884,6 +1924,12 @@ button.filter-chip:hover {
   align-items: center;
 }
 
+.accordion-item summary:focus-visible {
+  box-shadow:
+    0 0 0 3px rgba(5, 150, 105, 0.22),
+    inset 0 1px 1px rgba(255, 255, 255, 0.08);
+}
+
 .accordion-item summary::-webkit-details-marker {
   display: none;
 }
@@ -1920,7 +1966,7 @@ button.filter-chip:hover {
   background: var(--surface-soft);
 }
 .faq-accordion-section {
-  background: rgba(15, 17, 23, 0.5); /* В стеклянном стиле */
+  background: rgba(15, 17, 23, 0.5);
 }
 
 .skeleton-card {

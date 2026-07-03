@@ -69,6 +69,7 @@ const fallbackData = {
 const state = {
   data: fallbackData,
   dataUrl: "embedded public fallback",
+  dataSavedAt: null,
   map: null,
   tileLayer: null,
   markerLayer: null,
@@ -78,7 +79,8 @@ const state = {
   searchDebounceId: null,
   useTiles: true,
   filters: defaultFilters(),
-  currentFormStep: 1
+  currentFormStep: 1,
+  submitInProgress: false
 };
 
 const categoryMeta = {
@@ -187,12 +189,14 @@ function categoryFor(report) {
 }
 
 function formatTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "неизвестно";
   return new Intl.DateTimeFormat("ru-RU", {
     day: "2-digit",
     month: "2-digit",
     hour: "2-digit",
     minute: "2-digit"
-  }).format(new Date(value));
+  }).format(date);
 }
 
 function freshnessFor(report) {
@@ -231,7 +235,8 @@ async function loadData() {
       if (!response.ok) continue;
       state.data = await response.json();
       state.dataUrl = source;
-      localStorage.setItem(cacheKey, JSON.stringify({ data: state.data, dataUrl: source, saved_at: new Date().toISOString() }));
+      state.dataSavedAt = new Date().toISOString();
+      localStorage.setItem(cacheKey, JSON.stringify({ data: state.data, dataUrl: source, saved_at: state.dataSavedAt }));
       return;
     } catch {
       // Try the next known public export path.
@@ -243,6 +248,7 @@ async function loadData() {
     if (cached?.data?.reports?.length) {
       state.data = cached.data;
       state.dataUrl = `${cached.dataUrl || "cache"} (кэш)`;
+      state.dataSavedAt = cached.saved_at || null;
       return;
     }
   } catch {
@@ -250,6 +256,8 @@ async function loadData() {
   }
 
   state.data = fallbackData;
+  state.dataUrl = "embedded public fallback";
+  state.dataSavedAt = null;
 }
 
 function fillSelect(element, values, allLabel) {
@@ -353,11 +361,24 @@ function setupFilters() {
     const menu = $("#overflowMenu");
     const isOpen = menu.classList.toggle("is-open");
     $("#overflowToggle").setAttribute("aria-expanded", String(isOpen));
+    if (isOpen) {
+      const firstItem = menu.querySelector("button");
+      if (firstItem) firstItem.focus({ preventScroll: true });
+    }
   });
 
   document.addEventListener("click", () => {
     $("#overflowMenu").classList.remove("is-open");
     $("#overflowToggle").setAttribute("aria-expanded", "false");
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    const menu = $("#overflowMenu");
+    if (!menu.classList.contains("is-open")) return;
+    menu.classList.remove("is-open");
+    $("#overflowToggle").setAttribute("aria-expanded", "false");
+    $("#overflowToggle").focus({ preventScroll: true });
   });
 
   $("#footerAbout").addEventListener("click", () => openDialog($("#aboutDialog")));
@@ -392,15 +413,18 @@ function setupFilters() {
 
   $("#submitFormButton").addEventListener("click", (event) => {
     const submitButton = event.currentTarget;
-    if (submitButton.disabled) return;
-    submitButton.disabled = true;
+    if (state.submitInProgress) return;
+    state.submitInProgress = true;
+    submitButton.setAttribute("aria-disabled", "true");
     const draftText = $("#draftOutput").value;
     const botUrl = `https://t.me/WhiteS_Bot?text=${encodeURIComponent(draftText)}`;
     window.open(botUrl, '_blank');
     const dialog = $("#reportDialog");
     if (dialog) {
-      if (dialog.close) dialog.close();
-      else dialog.removeAttribute("open");
+      setTimeout(() => {
+        if (dialog.close) dialog.close();
+        else dialog.removeAttribute("open");
+      }, 80);
     }
   });
 
@@ -479,8 +503,8 @@ function setMobileView(view) {
   document.body.classList.toggle("show-list", view === "list");
   $("#showMapTab").classList.toggle("is-active", view === "map");
   $("#showListTab").classList.toggle("is-active", view === "list");
-  $("#showMapTab").setAttribute("aria-selected", String(view === "map"));
-  $("#showListTab").setAttribute("aria-selected", String(view === "list"));
+  $("#showMapTab").setAttribute("aria-pressed", String(view === "map"));
+  $("#showListTab").setAttribute("aria-pressed", String(view === "list"));
   if (view === "map" && state.map) {
     setTimeout(() => state.map.invalidateSize(), 40);
   }
@@ -512,11 +536,15 @@ function showFormStep(stepNum) {
   steps.forEach((step) => {
     const active = parseInt(step.dataset.step) === stepNum;
     step.classList.toggle("is-active", active);
+    step.setAttribute("aria-hidden", String(!active));
   });
 
   const progressBar = $("#formProgressBar");
   if (progressBar) {
     progressBar.style.width = `${(stepNum / steps.length) * 100}%`;
+    progressBar.setAttribute("aria-valuemax", String(steps.length));
+    progressBar.setAttribute("aria-valuenow", String(stepNum));
+    progressBar.setAttribute("aria-label", `Шаг ${stepNum} из ${steps.length}`);
   }
 
   $("#prevStepButton").style.display = stepNum === 1 ? "none" : "inline-flex";
@@ -525,6 +553,13 @@ function showFormStep(stepNum) {
   $("#copyDraftButton").style.display = stepNum === steps.length ? "inline-flex" : "none";
 
   state.currentFormStep = stepNum;
+  announce(`Шаг ${stepNum} из ${steps.length}`);
+
+  const activeStep = form.querySelector(`.form-step[data-step="${stepNum}"]`);
+  const firstField = activeStep?.querySelector("input, select, textarea, button");
+  if (firstField) {
+    setTimeout(() => firstField.focus({ preventScroll: true }), 40);
+  }
 }
 
 function openReportDialog() {
@@ -552,6 +587,8 @@ function resetReportForm() {
   if (servicesInput) servicesInput.value = "";
   $("#copyDraftButton").textContent = "Скопировать черновик";
   $("#submitFormButton").disabled = false;
+  $("#submitFormButton").removeAttribute("aria-disabled");
+  state.submitInProgress = false;
 }
 
 function splitServices(value) {
@@ -610,19 +647,26 @@ async function copyReportDraft() {
 }
 
 function updateTileModeButton() {
-  $("#tileModeButton").textContent = state.useTiles ? "Тайлы вкл" : "Тайлы выкл";
+  $("#tileModeButton").textContent = state.useTiles ? "Фон карты вкл" : "Фон карты выкл";
   $("#tileModeButton").setAttribute("aria-pressed", String(state.useTiles));
+}
+
+function setTileWarning(message) {
+  const warning = $("#tileWarning");
+  if (!warning) return;
+  if (message) warning.textContent = message;
+  warning.hidden = false;
 }
 
 function updateConnectivityWarning() {
   const warning = $("#tileWarning");
   if (!warning) return;
   if (!navigator.onLine) {
-    warning.hidden = false;
+    setTileWarning("Связь нестабильна: показываем последний доступный снимок. Список, фильтры и точки продолжают работать.");
     return;
   }
   if (!state.useTiles) {
-    warning.hidden = false;
+    setTileWarning("Фон карты отключен: это экономит трафик и уменьшает внешние запросы. Список, фильтры и точки продолжают работать.");
     return;
   }
   warning.hidden = true;
@@ -643,7 +687,7 @@ function toggleTileMode() {
       state.map.removeLayer(state.tileLayer);
       state.tileLayer = null;
     }
-    $("#tileWarning").hidden = false;
+    setTileWarning("Фон карты отключен: это экономит трафик и уменьшает внешние запросы. Список, фильтры и точки продолжают работать.");
     $(".map-silhouette")?.style && ($(".map-silhouette").style.display = "block");
   }
 }
@@ -660,7 +704,7 @@ function clearLocalData() {
 
 function setupMap() {
   if (!window.L) {
-    $("#tileWarning").hidden = false;
+    setTileWarning("Карта открыта в облегченном режиме: список, фильтры и точки доступны без внешнего фона.");
     const silhouette = $(".map-silhouette");
     if (silhouette) silhouette.style.display = "block";
     return;
@@ -684,7 +728,7 @@ function setupMap() {
   if (state.useTiles) {
     addTileLayer();
   } else {
-    $("#tileWarning").hidden = false;
+    setTileWarning("Фон карты отключен: это экономит трафик и уменьшает внешние запросы. Список, фильтры и точки продолжают работать.");
     $(".map-silhouette")?.style && ($(".map-silhouette").style.display = "block");
   }
 
@@ -706,7 +750,7 @@ function addTileLayer() {
   tiles.on("tileerror", () => {
     if (tileErrorShown) return;
     tileErrorShown = true;
-    $("#tileWarning").hidden = false;
+    setTileWarning("Фон карты временно не загрузился. Список, фильтры и точки продолжают работать.");
   });
 
   tiles.addTo(state.map);
@@ -844,7 +888,12 @@ function renderMarkers(reports) {
 
       marker.bindPopup(clusterPopupHtml(group));
       marker.on("click", () => {
-        state.map.flyTo(marker.getLatLng(), Math.max(state.map.getZoom() + 2, 6), { duration: 0.45 });
+        const nextZoom = Math.max(state.map.getZoom() + 2, 6);
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          state.map.setView(marker.getLatLng(), nextZoom);
+        } else {
+          state.map.flyTo(marker.getLatLng(), nextZoom, { duration: 0.45 });
+        }
       });
       marker.addTo(state.markerLayer);
       return;
@@ -912,8 +961,18 @@ function renderSummary(reports) {
     ["internet-shutdown", "whitelist-only", "partial-connectivity"].includes(report.incident_category)
   ).length;
   $("#updatedAt").textContent = `обновлено ${formatTime(state.data.updated_at)}`;
-  $("#dataBadge").textContent = "публичные данные";
-  $("#sourceNote").textContent = "Публично показываются только опубликованные модерацией записи.";
+  const isCache = state.dataUrl.includes("кэш");
+  const isFallback = state.dataUrl.includes("fallback");
+  if (isCache) {
+    $("#dataBadge").textContent = "из кэша";
+    $("#sourceNote").textContent = `Показан последний сохраненный снимок (${formatTime(state.dataSavedAt)}). Публично видны только записи после модерации.`;
+  } else if (isFallback) {
+    $("#dataBadge").textContent = "резервный снимок";
+    $("#sourceNote").textContent = "Основной файл данных не загрузился. Показан резервный публичный снимок без личных данных.";
+  } else {
+    $("#dataBadge").textContent = "публичные данные";
+    $("#sourceNote").textContent = "Публично показываются только опубликованные модерацией записи.";
+  }
 
   const countBadge = $("#tabCount");
   if (countBadge) {
@@ -1109,6 +1168,7 @@ function renderActiveFilters() {
 function renderList(reports) {
   const list = $("#reportsList");
   const template = $("#reportTemplate");
+  list.setAttribute("aria-busy", "true");
   list.innerHTML = "";
 
   if (!reports.length) {
@@ -1123,6 +1183,7 @@ function renderList(reports) {
     reset.addEventListener("click", () => $("#resetFiltersButton").click());
     empty.append(text, reset);
     list.appendChild(empty);
+    list.setAttribute("aria-busy", "false");
     return;
   }
 
@@ -1136,7 +1197,13 @@ function renderList(reports) {
     const tags = [category.label, freshnessLabels[freshnessFor(report)], report.confidence, confirmationText, ...(report.checked_services || []).slice(0, 3)].filter(Boolean);
 
     row.dataset.reportId = report.id;
-    row.classList.toggle("is-active", report.id === state.selectedId);
+    const isActive = report.id === state.selectedId;
+    row.classList.toggle("is-active", isActive);
+    if (isActive) row.setAttribute("aria-current", "true");
+    row.setAttribute(
+      "aria-label",
+      `${report.city_or_area}, ${report.operator}. ${category.label}. ${freshnessLabels[freshnessFor(report)]}. ${report.confidence}. ${report.summary}`
+    );
     row.querySelector(".row-status").classList.add(category.className);
     row.querySelector(".row-status").setAttribute("aria-label", category.label);
     row.querySelector(".row-title").textContent = `${report.city_or_area}, ${report.operator}`;
@@ -1159,6 +1226,7 @@ function renderList(reports) {
 
   requestAnimationFrame(() => {
     list.appendChild(fragment);
+    list.setAttribute("aria-busy", "false");
   });
 }
 
@@ -1166,7 +1234,10 @@ function selectReport(id, panToMarker) {
   state.selectedId = id;
 
   document.querySelectorAll(".report-row").forEach((row) => {
-    row.classList.toggle("is-active", row.dataset.reportId === id);
+    const isActive = row.dataset.reportId === id;
+    row.classList.toggle("is-active", isActive);
+    if (isActive) row.setAttribute("aria-current", "true");
+    else row.removeAttribute("aria-current");
   });
 
   state.markers.forEach((marker, markerId) => {
@@ -1184,6 +1255,8 @@ function selectReport(id, panToMarker) {
     }
   }
   if (marker) marker.openPopup();
+  const selected = publishedReports().find((report) => report.id === id);
+  if (selected) announce(`Выбрана отметка: ${selected.city_or_area}, ${selected.operator}`);
 }
 
 function render(options = {}) {
