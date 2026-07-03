@@ -594,18 +594,15 @@ test.describe('Tier 1: Feature Coverage (45 Test Cases)', () => {
       expect(customScrollbar).toBe(true);
     });
 
-    test('T1.9.4: Verify hidden scrollbar does not prevent scrolling', async ({ page }) => {
+    test('T1.9.4: Quick filters wrap into a grid without horizontal scroll on mobile', async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 820 });
       await page.reload();
       await page.click('#showMapTab');
-      // Scroll quick filters horizontally
-      const filterContainer = page.locator('.quick-filters');
-      const isScrollable = await filterContainer.evaluate(el => {
-        el.scrollLeft = 50;
-        return el.scrollLeft > 0;
-      });
-      // In a mobile/narrow layout it should be scrollable
-      expect(isScrollable).toBe(true);
+      // Filters now use a 2x2 grid on mobile — no horizontal overflow to scroll.
+      const overflow = await page.locator('.quick-filters').evaluate(
+        (el) => el.scrollWidth - el.clientWidth
+      );
+      expect(overflow).toBeLessThanOrEqual(1);
     });
 
     test('T1.9.5: Verify no layout shifts on sidebar scroll', async ({ page }) => {

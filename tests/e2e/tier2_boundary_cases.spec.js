@@ -600,13 +600,21 @@ test.describe('Tier 2: Boundary Cases (45 Test Cases)', () => {
   // FEATURE 9: Customized Scrollbar
   // ==========================================
   test.describe('Feature 9: Customized Scrollbar', () => {
-    test('T2.9.1: Mobile viewport scrollbar overlay checking', async ({ page }) => {
-      await page.setViewportSize({ width: 375, height: 667 }); // Mobile screen size
+    test('T2.9.1: Mobile quick filters fit without horizontal overflow (2x2 grid)', async ({ page }) => {
+      await page.setViewportSize({ width: 320, height: 667 }); // Narrowest supported width
       await page.click('#showMapTab');
-      const isScrollable = await page.locator('.quick-filters').evaluate(el => {
-        return el.scrollWidth > el.clientWidth;
-      });
-      expect(isScrollable).toBe(true);
+
+      // All four quick filters must be visible without a horizontal scroll.
+      const filters = page.locator('.quick-filters .quick-filter');
+      await expect(filters).toHaveCount(4);
+      for (let i = 0; i < 4; i += 1) {
+        await expect(filters.nth(i)).toBeVisible();
+      }
+
+      const overflow = await page.locator('.quick-filters').evaluate(
+        (el) => el.scrollWidth - el.clientWidth
+      );
+      expect(overflow).toBeLessThanOrEqual(1); // no meaningful horizontal overflow
     });
 
     test('T2.9.2: Cross-platform scrollbar width styling rules', async ({ page }) => {

@@ -49,21 +49,22 @@ test.describe('Tier 3: Cross-Feature Interactions (9 Test Cases)', () => {
     const val1 = (await pills.nth(1).textContent())?.trim() || '';
 
     await page.click('#nextStepButton');
-    
-    // Step 3: Submit and intercept new page
-    const [newPage] = await Promise.all([
-      context.waitForEvent('page', { timeout: 5000 }).catch(() => null),
-      page.click('#submitFormButton')
-    ]);
 
-    if (newPage) {
-      const urlObj = new URL(newPage.url());
-      const text = urlObj.searchParams.get('text') || '';
-      expect(text).toContain(val0);
-      expect(text).toContain(val1);
-    } else {
-      throw new Error('Telegram bot new tab was not opened');
-    }
+    // Step 3: the submit button carries the exact Telegram link (window.open
+    // popup capture is racy under load, so assert on the href deterministically).
+    const submitButton = page.locator('#submitFormButton');
+    const href = await submitButton.getAttribute('href');
+    expect(href).not.toBeNull();
+    const text = new URL(href).searchParams.get('text') || '';
+    expect(text).toContain(val0);
+    expect(text).toContain(val1);
+
+    // And the click opens a new tab.
+    const [newPage] = await Promise.all([
+      context.waitForEvent('page', { timeout: 15000 }).catch(() => null),
+      submitButton.click()
+    ]);
+    expect(newPage).not.toBeNull();
   });
 
   test('T3.3: Service Worker Caching + Dark Mode (Theme preservation offline)', async ({ context, page }) => {
