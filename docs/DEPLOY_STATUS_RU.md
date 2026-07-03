@@ -1,6 +1,18 @@
 # Статус деплоя WhiteS
 
-Дата: 2026-07-03
+Дата: 2026-07-04
+
+## Growth-релиз (Фазы A + B)
+
+- Версия ассетов: `app.js?v=20260704-phaseb`, `styles.css?v=20260704-phaseb`; SW cache `whites-v17`.
+- Фаза A (стиль): индикатор доверия на карточках/popup, 2×2 quick-filters на мобиле, схематичная карта без тайлов.
+- Фаза B (виральность): deep-links `?report=`/`?region=` с подсветкой; отчёт-зависимый шеринг; динамический OG-image `api/og.php` (main/region/report, PNG через GD, fallback на `og-image.png`); `share.php` + rewrite в `.htaccess` отдают crawler'у контекстные OG-мета; нудж «Поделиться» после подтверждения.
+- Live-проверка: index 200; `api/og.php` → 200 image/png; `?report=<id>` → og:image `api/og.php?report=<id>`; `api/confirm.php` пустой POST → 422.
+- E2E: `108 passed`.
+
+---
+
+## Прежний чекпоинт (Дата: 2026-07-03)
 
 ## Что опубликовано
 
