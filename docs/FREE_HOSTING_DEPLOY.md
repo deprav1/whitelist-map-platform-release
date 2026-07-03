@@ -30,14 +30,14 @@ flyctl auth login
 Deploy with a unique app name:
 
 ```powershell
-.\scripts\deploy-fly.ps1 -AppName whites-map-demo
+.\scripts\deploy-fly.ps1 -AppName whites-map
 ```
 
 To use an external MySQL service such as Aiven instead of creating the Fly MySQL app:
 
 ```powershell
 .\scripts\deploy-fly.ps1 `
-  -AppName whites-map-demo `
+  -AppName whites-map `
   -ExternalMysqlHost '<mysql-host>' `
   -ExternalMysqlPort '<mysql-port>' `
   -ExternalMysqlDatabase '<database>' `
@@ -56,7 +56,7 @@ By default, the script creates:
 After the app opens:
 
 ```powershell
-$env:USH_BASE_URL='https://whites-map-demo.fly.dev'
+$env:USH_BASE_URL='https://whites-map.fly.dev'
 .\scripts\bootstrap-whitelist.ps1
 ```
 

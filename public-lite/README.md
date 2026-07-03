@@ -8,7 +8,7 @@ Open locally:
 Start-Process .\public-lite\index.html
 ```
 
-For production, publish this folder as a static page and replace `reports.json` with the moderated public export. `reports.sample.json` stays as a fallback/demo file.
+For production, publish this folder as a static page and replace `reports.json` with the moderated public export. `reports.sample.json` stays as a safe fallback file for local recovery.
 
 Design principles:
 

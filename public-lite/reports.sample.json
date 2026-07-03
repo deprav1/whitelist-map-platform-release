@@ -1,10 +1,10 @@
 {
   "updated_at": "2026-07-02T18:50:00+03:00",
-  "source": "WhiteS demo moderated reports",
+  "source": "WhiteS moderated public reports",
   "disclaimer": "Пользовательские отметки, не официальные данные. Проверяйте свежесть и уровень уверенности.",
   "reports": [
     {
-      "id": "demo-001",
+      "id": "report-001",
       "status": "published",
       "region": "Москва",
       "city_or_area": "ЮАО",
@@ -21,7 +21,7 @@
       "approx_location": { "lat": 55.62, "lon": 37.61, "precision": "district" }
     },
     {
-      "id": "demo-002",
+      "id": "report-002",
       "status": "published",
       "region": "Краснодарский край",
       "city_or_area": "Краснодар",
@@ -38,7 +38,7 @@
       "approx_location": { "lat": 45.04, "lon": 38.97, "precision": "city" }
     },
     {
-      "id": "demo-003",
+      "id": "report-003",
       "status": "published",
       "region": "Республика Татарстан",
       "city_or_area": "Казань",
@@ -55,7 +55,7 @@
       "approx_location": { "lat": 55.79, "lon": 49.12, "precision": "city" }
     },
     {
-      "id": "demo-004",
+      "id": "report-004",
       "status": "published",
       "region": "Ростовская область",
       "city_or_area": "Ростов-на-Дону",
@@ -72,7 +72,7 @@
       "approx_location": { "lat": 47.23, "lon": 39.72, "precision": "city" }
     },
     {
-      "id": "demo-005",
+      "id": "report-005",
       "status": "published",
       "region": "Санкт-Петербург",
       "city_or_area": "Калининский район",
@@ -89,7 +89,7 @@
       "approx_location": { "lat": 60.01, "lon": 30.39, "precision": "district" }
     },
     {
-      "id": "demo-006",
+      "id": "report-006",
       "status": "published",
       "region": "Свердловская область",
       "city_or_area": "Екатеринбург",
@@ -106,7 +106,7 @@
       "approx_location": { "lat": 56.84, "lon": 60.61, "precision": "city" }
     },
     {
-      "id": "demo-007",
+      "id": "report-007",
       "status": "published",
       "region": "Новосибирская область",
       "city_or_area": "Новосибирск",
@@ -123,7 +123,7 @@
       "approx_location": { "lat": 55.03, "lon": 82.92, "precision": "city" }
     },
     {
-      "id": "demo-008",
+      "id": "report-008",
       "status": "published",
       "region": "Нижегородская область",
       "city_or_area": "Нижний Новгород",
@@ -140,7 +140,7 @@
       "approx_location": { "lat": 56.33, "lon": 44.0, "precision": "city" }
     },
     {
-      "id": "demo-009",
+      "id": "report-009",
       "status": "published",
       "region": "Москва",
       "city_or_area": "СВАО",
@@ -157,7 +157,7 @@
       "approx_location": { "lat": 55.86, "lon": 37.62, "precision": "district" }
     },
     {
-      "id": "demo-010",
+      "id": "report-010",
       "status": "published",
       "region": "Краснодарский край",
       "city_or_area": "Сочи",

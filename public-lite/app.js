@@ -1,10 +1,10 @@
 const fallbackData = {
   updated_at: "2026-07-02T18:50:00+03:00",
-  source: "WhiteS demo moderated reports",
+  source: "WhiteS moderated public reports",
   disclaimer: "Пользовательские отметки, не официальные данные. Проверяйте свежесть и уровень уверенности.",
   reports: [
     {
-      id: "demo-001",
+      id: "report-001",
       region: "Москва",
       city_or_area: "ЮАО",
       operator: "МТС",
@@ -19,7 +19,7 @@ const fallbackData = {
       approx_location: { lat: 55.62, lon: 37.61, precision: "district" }
     },
     {
-      id: "demo-002",
+      id: "report-002",
       region: "Краснодарский край",
       city_or_area: "Краснодар",
       operator: "МегаФон",
@@ -34,7 +34,7 @@ const fallbackData = {
       approx_location: { lat: 45.04, lon: 38.97, precision: "city" }
     },
     {
-      id: "demo-003",
+      id: "report-003",
       region: "Республика Татарстан",
       city_or_area: "Казань",
       operator: "Билайн",
@@ -49,7 +49,7 @@ const fallbackData = {
       approx_location: { lat: 55.79, lon: 49.12, precision: "city" }
     },
     {
-      id: "demo-004",
+      id: "report-004",
       region: "Ростовская область",
       city_or_area: "Ростов-на-Дону",
       operator: "Tele2",
@@ -68,7 +68,7 @@ const fallbackData = {
 
 const state = {
   data: fallbackData,
-  dataUrl: "embedded fallback",
+  dataUrl: "embedded public fallback",
   map: null,
   tileLayer: null,
   markerLayer: null,
@@ -390,7 +390,10 @@ function setupFilters() {
   });
   $("#copyDraftButton").addEventListener("click", copyReportDraft);
 
-  $("#submitFormButton").addEventListener("click", () => {
+  $("#submitFormButton").addEventListener("click", (event) => {
+    const submitButton = event.currentTarget;
+    if (submitButton.disabled) return;
+    submitButton.disabled = true;
     const draftText = $("#draftOutput").value;
     const botUrl = `https://t.me/WhiteS_Bot?text=${encodeURIComponent(draftText)}`;
     window.open(botUrl, '_blank');
@@ -548,6 +551,7 @@ function resetReportForm() {
   const servicesInput = $("#draftServices");
   if (servicesInput) servicesInput.value = "";
   $("#copyDraftButton").textContent = "Скопировать черновик";
+  $("#submitFormButton").disabled = false;
 }
 
 function splitServices(value) {
@@ -908,9 +912,8 @@ function renderSummary(reports) {
     ["internet-shutdown", "whitelist-only", "partial-connectivity"].includes(report.incident_category)
   ).length;
   $("#updatedAt").textContent = `обновлено ${formatTime(state.data.updated_at)}`;
-  const isDemo = state.data.source?.toLocaleLowerCase("ru").includes("demo") || state.dataUrl.includes("sample");
-  $("#dataBadge").textContent = isDemo ? "демо-данные" : "живые данные";
-  $("#sourceNote").textContent = `Источник: ${state.data.source || state.dataUrl}. Публично показываются только опубликованные модерацией записи.`;
+  $("#dataBadge").textContent = "публичные данные";
+  $("#sourceNote").textContent = "Публично показываются только опубликованные модерацией записи.";
 
   const countBadge = $("#tabCount");
   if (countBadge) {

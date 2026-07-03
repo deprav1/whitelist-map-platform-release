@@ -6,8 +6,9 @@
 
 - Рабочий публичный URL: https://kidai.website/whites/
 - Проверка после деплоя: HTTP 200.
-- Версия фронтенда в HTML: `app.js?v=20260703-ux`.
-- Версия Service Worker cache: `whites-v4`.
+- Версия фронтенда в HTML: `app.js?v=20260703-public`.
+- Версия Service Worker cache: `whites-v5`.
+- Публичные формулировки используют только рабочий статус модерируемых данных.
 - Архив для ручной загрузки: `tmp/whites-public-lite.zip`.
 
 ## Timeweb пути

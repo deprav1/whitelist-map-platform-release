@@ -32,7 +32,7 @@ reports.sample.json
 
 ```json
 {
-  "id": "demo-001",
+  "id": "report-001",
   "region": "Москва",
   "city_or_area": "ЮАО",
   "operator": "МТС",

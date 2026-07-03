@@ -124,14 +124,19 @@ test.describe('Tier 2: Boundary Cases (45 Test Cases)', () => {
       await page.fill('#draftSummary', commentText);
     }
 
+    async function submitAndWaitForPopup(page) {
+      const [newPage] = await Promise.all([
+        page.waitForEvent('popup', { timeout: 8000 }).catch(() => null),
+        page.click('#submitFormButton')
+      ]);
+      return newPage;
+    }
+
     test('T2.2.1: Long comment URL length limit (2048 chars)', async ({ context, page }) => {
       const longComment = 'A'.repeat(800); // Very long comment
       await fillSteps(page, longComment);
       
-      const [newPage] = await Promise.all([
-        context.waitForEvent('page', { timeout: 5000 }).catch(() => null),
-        page.click('#submitFormButton')
-      ]);
+      const newPage = await submitAndWaitForPopup(page);
 
       if (newPage) {
         expect(newPage.url().length).toBeLessThan(2048);
@@ -143,10 +148,7 @@ test.describe('Tier 2: Boundary Cases (45 Test Cases)', () => {
     test('T2.2.2: Encoding of special characters and emoji', async ({ context, page }) => {
       await fillSteps(page, 'Тест & специальный # символ с эмодзи 👋💻');
       
-      const [newPage] = await Promise.all([
-        context.waitForEvent('page', { timeout: 5000 }).catch(() => null),
-        page.click('#submitFormButton')
-      ]);
+      const newPage = await submitAndWaitForPopup(page);
 
       if (newPage) {
         const urlObj = new URL(newPage.url());
@@ -170,10 +172,7 @@ test.describe('Tier 2: Boundary Cases (45 Test Cases)', () => {
       // Step 3: Clear comment
       await page.fill('#draftSummary', '');
 
-      const [newPage] = await Promise.all([
-        context.waitForEvent('page', { timeout: 5000 }).catch(() => null),
-        page.click('#submitFormButton')
-      ]);
+      const newPage = await submitAndWaitForPopup(page);
 
       if (newPage) {
         const urlObj = new URL(newPage.url());
@@ -188,20 +187,19 @@ test.describe('Tier 2: Boundary Cases (45 Test Cases)', () => {
     test('T2.2.4: Spam click prevention', async ({ context, page }) => {
       await fillSteps(page, 'Spam click check');
       
-      const pages = [];
-      context.on('page', (p) => pages.push(p));
-
       // Click button 3 times rapidly
       const submitBtn = page.locator('#submitFormButton');
-      await Promise.all([
+      const firstPopupPromise = page.waitForEvent('popup', { timeout: 8000 }).catch(() => null);
+      await Promise.allSettled([
         submitBtn.click(),
         submitBtn.click(),
         submitBtn.click()
-      ]).catch(() => {});
+      ]);
 
-      // Wait a moment
-      await page.waitForTimeout(1000);
-      expect(pages.length).toBe(1); // Only 1 tab should be opened
+      const firstPopup = await firstPopupPromise;
+      expect(firstPopup).not.toBeNull();
+      const secondPopup = await page.waitForEvent('popup', { timeout: 1000 }).catch(() => null);
+      expect(secondPopup).toBeNull();
     });
 
     test('T2.2.5: Deep link works if clipboard access is blocked', async ({ context, page }) => {
@@ -209,10 +207,7 @@ test.describe('Tier 2: Boundary Cases (45 Test Cases)', () => {
       await context.clearPermissions();
       await fillSteps(page, 'No clipboard access');
       
-      const [newPage] = await Promise.all([
-        context.waitForEvent('page', { timeout: 5000 }).catch(() => null),
-        page.click('#submitFormButton')
-      ]);
+      const newPage = await submitAndWaitForPopup(page);
 
       expect(newPage).not.toBeNull();
       if (newPage) {

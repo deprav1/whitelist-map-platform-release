@@ -18,7 +18,7 @@ Use this when you want the cheapest public MVP and are okay with a small databas
 
 ```powershell
 .\scripts\deploy-fly.ps1 `
-  -AppName whites-map-demo `
+  -AppName whites-map `
   -ExternalMysqlHost '<aiven-host>' `
   -ExternalMysqlPort '<aiven-port>' `
   -ExternalMysqlDatabase '<aiven-database>' `

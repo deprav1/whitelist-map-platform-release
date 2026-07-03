@@ -45,7 +45,7 @@ test.describe('Tier 4: Real-World Workload (5 Test Cases)', () => {
 
     // Submit and check Telegram link
     const [newPage] = await Promise.all([
-      context.waitForEvent('page', { timeout: 5000 }).catch(() => null),
+      page.waitForEvent('popup', { timeout: 5000 }).catch(() => null),
       page.click('#submitFormButton')
     ]);
 
