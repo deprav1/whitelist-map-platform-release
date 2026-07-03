@@ -1,6 +1,14 @@
 DirectoryIndex index.html
 Options -Indexes
 
+# Расшаренные ссылки ?report= / ?region= отдаём через share.php с контекстными
+# Open Graph мета (SPA грузится как обычно; crawler получает нужное превью).
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{QUERY_STRING} (^|&)(report|region)=[^&]+
+  RewriteRule ^(index\.html)?$ share.php [L,QSA]
+</IfModule>
+
 AddType application/json .json
 AddType application/xml .xml
 AddType text/css .css
