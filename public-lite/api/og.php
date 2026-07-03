@@ -177,13 +177,13 @@ imagettftext($img, 62, 0, 92, 400, $emerald, $fontB, $headline);
 imagettftext($img, 34, 0, 96, 470, $muted, $fontR, $subline);
 
 // privacy pill
-$pillY = 540;
+$pillY = 500;
 imagefilledrectangle($img, 96, $pillY, 96 + 470, $pillY + 52, imagecolorallocatealpha($img, 5, 150, 105, 110));
 imagefilledellipse($img, 128, $pillY + 26, 12, 12, $emerald);
 imagettftext($img, 22, 0, 150, $pillY + 35, $emerald, $fontR, 'Приватно · без регистрации');
 
 // домен
-imagettftext($img, 24, 0, 96, OG_H - 40, $muted, $fontR, 'kidai.website/whites');
+imagettftext($img, 24, 0, 96, OG_H - 48, $muted, $fontR, 'kidai.website/whites');
 
 header('Content-Type: image/png');
 header('Cache-Control: public, max-age=600'); // 10 минут
