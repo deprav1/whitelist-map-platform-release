@@ -43,9 +43,9 @@ test.describe('Tier 4: Real-World Workload (6 Test Cases)', () => {
     // Fill Step 3
     await page.fill('#draftSummary', 'Мессенджер работает, сайты заблокированы');
 
-    // Submit and check Telegram link
+    // Submit and check Telegram link (window.open -> new page in context)
     const [newPage] = await Promise.all([
-      page.waitForEvent('popup', { timeout: 5000 }).catch(() => null),
+      context.waitForEvent('page', { timeout: 5000 }).catch(() => null),
       page.click('#submitFormButton')
     ]);
 
