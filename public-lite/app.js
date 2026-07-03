@@ -234,7 +234,11 @@ async function confirmReport(reportId, buttonEl) {
     buttonEl.textContent = "Вы подтвердили";
   }
   updateConfirmationViews(reportId);
-  announce(`Подтверждено: ${report.city_or_area}, ${report.operator}. Спасибо.`);
+  // Эмоциональный пик подтверждения — момент шеринга: делаем отметку выбранной,
+  // чтобы кнопка «Поделиться» отдавала ссылку именно на неё, и подсказываем.
+  state.selectedId = reportId;
+  nudgeShareForReport(reportId);
+  announce(`Подтверждено: ${report.city_or_area}, ${report.operator}. Спасибо! Теперь можно поделиться этим местом.`);
 
   // Лучшее усилие: сохранить на бэке (дедуп/rate-limit там же). Офлайн — остаётся локально.
   try {
@@ -246,6 +250,16 @@ async function confirmReport(reportId, buttonEl) {
 
 function confirmationLabel(report) {
   return report.confirmation_count ? `${report.confirmation_count} подтвердили` : "";
+}
+
+// Мягко подсветить кнопку «Поделиться» после подтверждения/отправки отметки.
+function nudgeShareForReport() {
+  const button = $("#shareButton");
+  if (!button) return;
+  button.classList.add("is-nudge");
+  button.setAttribute("title", "Поделитесь этим местом — так о сбое узнают соседи");
+  clearTimeout(state.shareNudgeTimer);
+  state.shareNudgeTimer = setTimeout(() => button.classList.remove("is-nudge"), 6000);
 }
 
 function updateConfirmationViews(reportId) {

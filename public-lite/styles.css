@@ -1231,6 +1231,25 @@ button.filter-chip:hover {
   transform: none;
 }
 
+/* Нудж «Поделиться» после подтверждения/отправки отметки */
+@keyframes shareNudgePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
+  50% { box-shadow: 0 0 0 6px rgba(5, 150, 105, 0.28); }
+}
+
+.compact-share.is-nudge {
+  border-color: var(--brand-border);
+  color: var(--brand-text);
+  animation: shareNudgePulse 1.4s var(--ease) 3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compact-share.is-nudge {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.24);
+  }
+}
+
 /* ========================================
    Trust indicator
    ======================================== */
