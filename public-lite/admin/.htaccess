@@ -1,0 +1,12 @@
+DirectoryIndex index.php
+Options -Indexes
+
+<IfModule mod_headers.c>
+  Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+  Header set Pragma "no-cache"
+  Header set X-Robots-Tag "noindex, nofollow, noarchive"
+</IfModule>
+
+<FilesMatch "\.(sqlite|sqlite3|db|wal|shm|txt)$">
+  Require all denied
+</FilesMatch>

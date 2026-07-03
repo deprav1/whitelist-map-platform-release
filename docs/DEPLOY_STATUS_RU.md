@@ -12,10 +12,12 @@
 - SEO/PWA: опубликованы `sitemap.xml`, `robots.txt` с sitemap, JSON-LD, `og-image.png`, PNG icons 192/512 + maskable.
 - Safety UX: опубликована кнопка жалобы на публичную отметку в карточках и popup; жалоба формируется как Telegram-черновик без запроса контактов.
 - Storage MVP: опубликован `public-lite/api/` для приема отчетов и жалоб в приватную SQLite-базу Timeweb с резервным Telegram-черновиком.
+- Moderation MVP: опубликован закрытый `/admin/` для просмотра очередей, публикации безопасных записей и пересборки `reports.json`.
 - Публичные формулировки используют только рабочий статус модерируемых данных.
 - Мобильная карта и список обновлены в UX-релизе `ff79b8b`.
 - Архив для ручной загрузки: `tmp/whites-public-lite.zip`.
 - Приватная база Timeweb: `/home/c/cb077728/KidAI/whites-data/whites.sqlite`.
+- Приватный admin token: `/home/c/cb077728/KidAI/whites-data/admin-token.txt`.
 
 ## Timeweb пути
 

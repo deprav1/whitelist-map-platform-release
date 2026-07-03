@@ -15,6 +15,7 @@ C:\Users\Lenovo\Desktop\PROEKTZ\WhiteS
 - `public-lite/styles.css` - весь дизайн публичной карты.
 - `public-lite/app.js` - логика карты, фильтров, списка, черновика отчета и мобильного режима.
 - `public-lite/api/` - PHP API для приема отчетов и жалоб в приватную SQLite-премодерацию.
+- `public-lite/admin/` - закрытая PHP-админка модерации и экспорта `reports.json`.
 - `public-lite/reports.json` - текущий публичный экспорт модерируемых отметок, который видит карта.
 - `data/public-reports.sample.json` - эталонный пример безопасного публичного JSON.
 - `docs/` - продуктовые планы, workflow, безопасность, модерация, деплой, доступы и эксплуатация.
