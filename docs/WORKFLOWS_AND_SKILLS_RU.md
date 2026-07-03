@@ -27,6 +27,8 @@ WhiteS — аварийная карта доступности интернет
 
 Если задача про публикацию, читать `docs/PUBLIC_LITE_DEPLOY_RU.md`, `docs/SSH_ACCESS_RU.md`, `docs/SUBDOMAIN_TIMEWEB_RU.md`.
 
+Если задача про прием пользовательских отчетов или хранение, читать `docs/TIMEWEB_STORAGE_RU.md`.
+
 Если задача про безопасность или тексты формы, читать `docs/SAFETY_RU.md`, `docs/MODERATION_RU.md`, `docs/REPORT_RULES_RU.md`, `docs/PRIVACY_RU.md`.
 
 ## Workflow 1: UX и продуктовая итерация
@@ -184,7 +186,8 @@ Invoke-WebRequest -Uri "https://kidai.website/whites/reports.json" -UseBasicPars
 - `docs/MONTH_PLAN_RU.md`;
 - `docs/ROADMAP_RU.md`;
 - `.agents/roadmap/README.md`;
-- `docs/DATABASE_OPTIONS.md`.
+- `docs/DATABASE_OPTIONS.md`;
+- `docs/TIMEWEB_STORAGE_RU.md`.
 
 Правила:
 

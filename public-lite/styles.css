@@ -245,6 +245,7 @@ textarea:focus-visible {
 }
 
 .top-actions {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -1466,6 +1467,7 @@ button.filter-chip:hover {
 .modal-actions {
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -1474,6 +1476,26 @@ button.filter-chip:hover {
   font-size: 13px;
   line-height: 1.5;
   resize: vertical;
+}
+
+.form-status {
+  min-height: 22px;
+  margin: 4px 0 0;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.form-status.is-pending {
+  color: #fde68a;
+}
+
+.form-status.is-success {
+  color: #86efac;
+}
+
+.form-status.is-error {
+  color: #fca5a5;
 }
 
 /* ========================================

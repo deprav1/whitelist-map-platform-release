@@ -6,14 +6,16 @@
 
 - Рабочий публичный URL: https://kidai.website/whites/
 - Проверка после деплоя: HTTP 200.
-- Версия фронтенда в HTML: `app.js?v=20260703-p0-issue`.
-- Версия CSS в HTML: `styles.css?v=20260703-p0-issue`.
-- Версия Service Worker cache: `whites-v8`.
+- Версия фронтенда в HTML: `app.js?v=20260703-storage`.
+- Версия CSS в HTML: `styles.css?v=20260703-storage`.
+- Версия Service Worker cache: `whites-v9`.
 - SEO/PWA: опубликованы `sitemap.xml`, `robots.txt` с sitemap, JSON-LD, `og-image.png`, PNG icons 192/512 + maskable.
 - Safety UX: опубликована кнопка жалобы на публичную отметку в карточках и popup; жалоба формируется как Telegram-черновик без запроса контактов.
+- Storage MVP: опубликован `public-lite/api/` для приема отчетов и жалоб в приватную SQLite-базу Timeweb с резервным Telegram-черновиком.
 - Публичные формулировки используют только рабочий статус модерируемых данных.
 - Мобильная карта и список обновлены в UX-релизе `ff79b8b`.
 - Архив для ручной загрузки: `tmp/whites-public-lite.zip`.
+- Приватная база Timeweb: `/home/c/cb077728/KidAI/whites-data/whites.sqlite`.
 
 ## Timeweb пути
 

@@ -1,10 +1,32 @@
 # Database options
 
-WhiteS currently runs on Ushahidi Platform Release, so the database should be boring MySQL-compatible storage with support for spatial/geometry fields. Do not choose a PostgreSQL-only service unless the app is migrated away from Ushahidi.
+WhiteS now has two possible tracks:
 
-## Best default: Aiven free MySQL
+- public-lite MVP on Timeweb: PHP + SQLite, already available on the current hosting plan;
+- future full Ushahidi/CMS track: boring MySQL-compatible storage with spatial/geometry support.
 
-Aiven is the most interesting free database option for the MVP:
+For the current public map, prefer the Timeweb SQLite MVP until moderation volume or admin needs outgrow it. Public reads should still come from `reports.json`, not from raw submissions.
+
+## Current MVP: Timeweb SQLite
+
+Pros:
+
+- no extra database provider or monthly cost;
+- works on the current Timeweb hosting with PHP 8.2, `pdo_sqlite`, and `sqlite3`;
+- database lives outside `public_html` at `/home/c/cb077728/KidAI/whites-data/whites.sqlite`;
+- enough for initial report intake, complaints, and a small moderation queue.
+
+Cons:
+
+- no managed backups by a DB provider;
+- single-server file database;
+- manual migration needed when moderation grows.
+
+Use this now for `public-lite/api/submit.php` and `public-lite/api/complaint.php`. Keep public reads on `reports.json`.
+
+## Future full platform default: Aiven free MySQL
+
+Aiven is the most interesting free MySQL option if the project returns to the full Ushahidi-style platform:
 
 - managed MySQL;
 - always-free plan;

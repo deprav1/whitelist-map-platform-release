@@ -81,8 +81,10 @@ const state = {
   filters: defaultFilters(),
   currentFormStep: 1,
   submitInProgress: false,
+  reportApiSubmitInProgress: false,
   issueReportId: null,
-  issueSubmitInProgress: false
+  issueSubmitInProgress: false,
+  issueApiSubmitInProgress: false
 };
 
 const categoryMeta = {
@@ -375,6 +377,7 @@ function setupFilters() {
       if (firstItem) firstItem.focus({ preventScroll: true });
     }
   });
+  $("#overflowMenu")?.addEventListener("click", (event) => event.stopPropagation());
 
   document.addEventListener("click", () => {
     $("#overflowMenu").classList.remove("is-open");
@@ -397,6 +400,7 @@ function setupFilters() {
   $("#issueReason")?.addEventListener("change", updateIssueDraft);
   $("#issueComment")?.addEventListener("input", updateIssueDraft);
   $("#copyIssueDraftButton")?.addEventListener("click", copyIssueDraft);
+  $("#sendIssueButton")?.addEventListener("click", submitIssueToModeration);
   $("#submitIssueButton")?.addEventListener("click", (event) => {
     const submitButton = event.currentTarget;
     event.preventDefault();
@@ -408,7 +412,7 @@ function setupFilters() {
     state.issueSubmitInProgress = true;
     submitButton.setAttribute("aria-disabled", "true");
     submitButton.removeAttribute("href");
-    window.open(targetUrl, "_blank", "noopener");
+    openExternalUrl(targetUrl);
     const dialog = $("#issueDialog");
     if (dialog) {
       setTimeout(() => {
@@ -451,6 +455,7 @@ function setupFilters() {
     }
   });
   $("#copyDraftButton").addEventListener("click", copyReportDraft);
+  $("#sendModerationButton")?.addEventListener("click", submitReportToModeration);
 
   $("#submitFormButton").addEventListener("click", (event) => {
     const submitButton = event.currentTarget;
@@ -463,7 +468,7 @@ function setupFilters() {
     state.submitInProgress = true;
     submitButton.setAttribute("aria-disabled", "true");
     submitButton.removeAttribute("href");
-    window.open(targetUrl, "_blank", "noopener");
+    openExternalUrl(targetUrl);
     const dialog = $("#reportDialog");
     if (dialog) {
       setTimeout(() => {
@@ -600,6 +605,10 @@ function openDialog(dialog) {
   dialog.setAttribute("open", "");
 }
 
+function openExternalUrl(url) {
+  window.open(url, "_blank");
+}
+
 function showFormStep(stepNum) {
   const form = $("#reportDraftForm");
   if (!form) return;
@@ -620,6 +629,7 @@ function showFormStep(stepNum) {
 
   $("#prevStepButton").style.display = stepNum === 1 ? "none" : "inline-flex";
   $("#nextStepButton").style.display = stepNum === steps.length ? "none" : "inline-flex";
+  $("#sendModerationButton").style.display = stepNum === steps.length ? "inline-flex" : "none";
   $("#submitFormButton").style.display = stepNum === steps.length ? "inline-flex" : "none";
   $("#copyDraftButton").style.display = stepNum === steps.length ? "inline-flex" : "none";
 
@@ -661,11 +671,22 @@ function resetReportForm() {
   });
   const servicesInput = $("#draftServices");
   if (servicesInput) servicesInput.value = "";
+  const reportStatus = $("#reportSubmitStatus");
+  if (reportStatus) {
+    reportStatus.textContent = "";
+    reportStatus.className = "form-status";
+  }
+  const sendButton = $("#sendModerationButton");
+  if (sendButton) {
+    sendButton.disabled = false;
+    sendButton.textContent = "Отправить на модерацию";
+  }
   $("#copyDraftButton").textContent = "Скопировать черновик";
   const submitButton = $("#submitFormButton");
   submitButton.disabled = false;
   submitButton.removeAttribute("aria-disabled");
   state.submitInProgress = false;
+  state.reportApiSubmitInProgress = false;
 }
 
 function reportById(id) {
@@ -689,9 +710,20 @@ function resetIssueForm(report) {
   $("#issueComment").value = "";
   $("#issueCommentCounter").textContent = "0 / 400";
   $("#copyIssueDraftButton").textContent = "Скопировать";
+  const issueStatus = $("#issueSubmitStatus");
+  if (issueStatus) {
+    issueStatus.textContent = "";
+    issueStatus.className = "form-status";
+  }
+  const sendButton = $("#sendIssueButton");
+  if (sendButton) {
+    sendButton.disabled = false;
+    sendButton.textContent = "Отправить жалобу";
+  }
   const submitButton = $("#submitIssueButton");
   submitButton.removeAttribute("aria-disabled");
   state.issueSubmitInProgress = false;
+  state.issueApiSubmitInProgress = false;
 }
 
 function updateIssueDraft() {
@@ -729,6 +761,38 @@ async function copyIssueDraft() {
   setTimeout(() => {
     $("#copyIssueDraftButton").textContent = "Скопировать";
   }, 1400);
+}
+
+async function submitIssueToModeration() {
+  if (state.issueApiSubmitInProgress) return;
+  const report = reportById(state.issueReportId);
+  if (!report) return;
+
+  updateIssueDraft();
+  state.issueApiSubmitInProgress = true;
+  const button = $("#sendIssueButton");
+  const status = $("#issueSubmitStatus");
+  button.disabled = true;
+  button.textContent = "Отправляем...";
+  setFormStatus(status, "Отправляем жалобу в модерацию.", "pending");
+
+  try {
+    const response = await postJson("api/complaint.php", {
+      report_id: report.id,
+      reason: $("#issueReason").value,
+      comment: draftValue("#issueComment"),
+    });
+    setFormStatus(status, `Жалоба принята. Номер: ${response.id}.`, "success");
+    button.textContent = "Жалоба отправлена";
+    announce("Жалоба отправлена в модерацию");
+  } catch (error) {
+    button.disabled = false;
+    button.textContent = "Отправить жалобу";
+    setFormStatus(status, "Не удалось сохранить жалобу. Скопируйте черновик или отправьте через Telegram.", "error");
+    announce("Не удалось отправить жалобу");
+  } finally {
+    state.issueApiSubmitInProgress = false;
+  }
 }
 
 function syncOperatorPills() {
@@ -782,6 +846,77 @@ function updateDraftOutput() {
   if (submitButton) {
     submitButton.href = `https://t.me/WhiteS_Bot?text=${encodeURIComponent($("#draftOutput").value)}`;
   }
+}
+
+function reportPayloadFromForm() {
+  syncDraftServicesInput();
+  return {
+    area: draftValue("#draftArea"),
+    operator: draftValue("#draftOperator"),
+    network_type: $("#draftNetwork").value,
+    problem_type: $("#draftProblem").value,
+    services: splitServices(draftValue("#draftServices")),
+    checked_at: new Date().toISOString(),
+    confidence: $("#draftConfidence").value,
+    summary: draftValue("#draftSummary"),
+  };
+}
+
+async function submitReportToModeration() {
+  if (state.reportApiSubmitInProgress) return;
+  updateDraftOutput();
+
+  const payload = reportPayloadFromForm();
+  const button = $("#sendModerationButton");
+  const status = $("#reportSubmitStatus");
+  state.reportApiSubmitInProgress = true;
+  button.disabled = true;
+  button.textContent = "Отправляем...";
+  setFormStatus(status, "Отправляем отчет в премодерацию.", "pending");
+
+  try {
+    const response = await postJson("api/submit.php", payload);
+    setFormStatus(status, `Отчет принят в премодерацию. Номер: ${response.id}.`, "success");
+    button.textContent = "Отчет отправлен";
+    announce("Отчет отправлен в премодерацию");
+  } catch (error) {
+    button.disabled = false;
+    button.textContent = "Отправить на модерацию";
+    setFormStatus(status, "Не удалось сохранить отчет. Скопируйте черновик или отправьте через Telegram.", "error");
+    announce("Не удалось отправить отчет");
+  } finally {
+    state.reportApiSubmitInProgress = false;
+  }
+}
+
+async function postJson(url, payload) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  let data = {};
+  try {
+    data = await response.json();
+  } catch {
+    data = {};
+  }
+
+  if (!response.ok || data.ok === false) {
+    throw new Error(data.message || "Request failed");
+  }
+
+  return data;
+}
+
+function setFormStatus(element, message, tone) {
+  if (!element) return;
+  element.textContent = message;
+  element.className = `form-status is-${tone}`;
 }
 
 async function copyReportDraft() {

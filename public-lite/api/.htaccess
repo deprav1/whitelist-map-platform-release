@@ -1,0 +1,7 @@
+<Files "_bootstrap.php">
+  Require all denied
+</Files>
+
+<FilesMatch "\.(sqlite|sqlite3|db|wal|shm)$">
+  Require all denied
+</FilesMatch>

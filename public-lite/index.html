@@ -29,7 +29,7 @@
   <title>WhiteS — карта доступности интернета в России</title>
   <meta name="description" content="WhiteS показывает публичные модерируемые отметки об отключениях интернета, режиме белого списка, частичных сбоях сервисов и восстановлении доступа.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.9.4">
-  <link rel="stylesheet" href="styles.css?v=20260703-p0-issue">
+  <link rel="stylesheet" href="styles.css?v=20260703-storage">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -399,13 +399,15 @@
         </ul>
 
         <textarea class="draft-output" id="draftOutput" readonly aria-label="Черновик отчета"></textarea>
+        <p class="form-status" id="reportSubmitStatus" role="status" aria-live="polite"></p>
       </div>
 
       <div class="modal-actions">
         <button class="ghost-button" id="prevStepButton" type="button" style="display: none;">Назад</button>
         <button class="primary-button" id="nextStepButton" type="button">Далее</button>
+        <button class="primary-button" id="sendModerationButton" type="button" style="display: none;">Отправить на модерацию</button>
         <button class="ghost-button" id="copyDraftButton" type="button" style="display: none;">Скопировать черновик</button>
-        <a class="primary-button" id="submitFormButton" href="https://t.me/WhiteS_Bot" target="_blank" rel="noopener" style="display: none;">Открыть Telegram с черновиком</a>
+        <a class="ghost-button" id="submitFormButton" href="https://t.me/WhiteS_Bot" target="_blank" rel="noopener" style="display: none;">Telegram</a>
       </div>
     </form>
   </dialog>
@@ -415,7 +417,7 @@
       <header class="modal-head">
         <div>
           <h2 id="issueDialogTitle">Пожаловаться на отметку</h2>
-          <p>Сайт не сохраняет жалобу автоматически. Можно скопировать текст или открыть Telegram-бота с готовым черновиком для модерации.</p>
+          <p>Жалоба уйдет в модерацию без контактов и точной геолокации. Если сеть мешает отправке, можно скопировать черновик или открыть Telegram.</p>
         </div>
         <button class="icon-button" value="close" type="submit" aria-label="Закрыть">×</button>
       </header>
@@ -449,10 +451,12 @@
       </div>
 
       <textarea class="draft-output" id="issueDraftOutput" readonly aria-label="Черновик жалобы"></textarea>
+      <p class="form-status" id="issueSubmitStatus" role="status" aria-live="polite"></p>
 
       <div class="modal-actions">
+        <button class="primary-button" id="sendIssueButton" type="button">Отправить жалобу</button>
         <button class="ghost-button" id="copyIssueDraftButton" type="button">Скопировать</button>
-        <a class="primary-button" id="submitIssueButton" href="https://t.me/WhiteS_Bot" target="_blank" rel="noopener">Открыть Telegram</a>
+        <a class="ghost-button" id="submitIssueButton" href="https://t.me/WhiteS_Bot" target="_blank" rel="noopener">Telegram</a>
       </div>
     </form>
   </dialog>
@@ -564,6 +568,6 @@
   </dialog>
 
   <script src="vendor/leaflet/leaflet.js?v=1.9.4"></script>
-  <script src="app.js?v=20260703-p0-issue"></script>
+  <script src="app.js?v=20260703-storage"></script>
 </body>
 </html>

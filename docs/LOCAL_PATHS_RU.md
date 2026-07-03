@@ -14,6 +14,7 @@ C:\Users\Lenovo\Desktop\PROEKTZ\WhiteS
 - `public-lite/index.html` - структура страницы: шапка, карта, список отчетов, модалки.
 - `public-lite/styles.css` - весь дизайн публичной карты.
 - `public-lite/app.js` - логика карты, фильтров, списка, черновика отчета и мобильного режима.
+- `public-lite/api/` - PHP API для приема отчетов и жалоб в приватную SQLite-премодерацию.
 - `public-lite/reports.json` - текущий публичный экспорт модерируемых отметок, который видит карта.
 - `data/public-reports.sample.json` - эталонный пример безопасного публичного JSON.
 - `docs/` - продуктовые планы, workflow, безопасность, модерация, деплой, доступы и эксплуатация.
@@ -46,6 +47,12 @@ C:\Users\Lenovo\Desktop\PROEKTZ\WhiteS
 
 ```powershell
 .\scripts\deploy-public-lite-ssh.ps1 -HostName 'vh464.timeweb.ru' -UserName 'cb077728' -RemotePublicHtml '/home/c/cb077728/whites.kidai.website/public_html'
+```
+
+Подготовить приватное SQLite-хранилище на Timeweb и проверить API:
+
+```powershell
+.\scripts\setup-timeweb-storage.ps1
 ```
 
 ## Публичные адреса
