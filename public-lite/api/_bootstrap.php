@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 const WHITES_MAX_BODY_BYTES = 32768;
-const WHITES_SCHEMA_VERSION = 1;
+const WHITES_SCHEMA_VERSION = 2;
 
 function whites_json(array $payload, int $status = 200): void
 {
@@ -144,6 +144,16 @@ function whites_init_schema(PDO $pdo): void
     ");
 
     $pdo->exec("
+        CREATE TABLE IF NOT EXISTS confirmations (
+            id TEXT PRIMARY KEY,
+            created_at TEXT NOT NULL,
+            report_id TEXT NOT NULL,
+            device_hash TEXT NOT NULL,
+            UNIQUE(report_id, device_hash)
+        )
+    ");
+
+    $pdo->exec("
         CREATE TABLE IF NOT EXISTS moderation_events (
             id TEXT PRIMARY KEY,
             created_at TEXT NOT NULL,
@@ -157,6 +167,7 @@ function whites_init_schema(PDO $pdo): void
     $pdo->exec('CREATE INDEX IF NOT EXISTS idx_submissions_status_created ON submissions(status, created_at)');
     $pdo->exec('CREATE INDEX IF NOT EXISTS idx_complaints_status_created ON complaints(status, created_at)');
     $pdo->exec('CREATE INDEX IF NOT EXISTS idx_complaints_report_id ON complaints(report_id)');
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_confirmations_report_id ON confirmations(report_id)');
     $pdo->exec('PRAGMA user_version = ' . WHITES_SCHEMA_VERSION);
 }
 

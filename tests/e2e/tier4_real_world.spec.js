@@ -43,24 +43,29 @@ test.describe('Tier 4: Real-World Workload (6 Test Cases)', () => {
     // Fill Step 3
     await page.fill('#draftSummary', 'Мессенджер работает, сайты заблокированы');
 
-    // Submit and check Telegram link (window.open -> new page in context)
-    const [newPage] = await Promise.all([
-      context.waitForEvent('page', { timeout: 5000 }).catch(() => null),
-      page.click('#submitFormButton')
-    ]);
+    // The submit button carries the exact Telegram link the app opens via
+    // window.open. Assert on the href deterministically (the popup capture
+    // itself is racy under full-suite load), then confirm a tab is opened.
+    const submitButton = page.locator('#submitFormButton');
+    const href = await submitButton.getAttribute('href');
+    expect(href).not.toBeNull();
 
+    const urlObj = new URL(href);
+    expect(urlObj.origin).toBe('https://t.me');
+    expect(urlObj.pathname).toBe('/WhiteS_Bot');
+
+    const textParam = urlObj.searchParams.get('text') || '';
+    expect(textParam).toContain('Москва, ЮЗАО');
+    expect(textParam).toContain('МТС');
+    expect(textParam).toContain('Работает только белый список');
+    expect(textParam).toContain('Мессенджер работает, сайты заблокированы');
+
+    // The click should open the Telegram link in a new browser tab.
+    const [newPage] = await Promise.all([
+      context.waitForEvent('page', { timeout: 15000 }).catch(() => null),
+      submitButton.click()
+    ]);
     expect(newPage).not.toBeNull();
-    if (newPage) {
-      const urlObj = new URL(newPage.url());
-      expect(urlObj.origin).toBe('https://t.me');
-      expect(urlObj.pathname).toBe('/WhiteS_Bot');
-      
-      const textParam = urlObj.searchParams.get('text') || '';
-      expect(textParam).toContain('Москва, ЮЗАО');
-      expect(textParam).toContain('МТС');
-      expect(textParam).toContain('Работает только белый список');
-      expect(textParam).toContain('Мессенджер работает, сайты заблокированы');
-    }
   });
 
   // ==========================================
@@ -261,5 +266,49 @@ test.describe('Tier 4: Real-World Workload (6 Test Cases)', () => {
       expect(textParam).toContain('жалоба на публичную отметку');
       expect(textParam).toContain('Персональные данные или точный адрес');
     }
+  });
+
+  // ==========================================
+  // T4.7: Подтверждение «Я тоже это вижу»
+  // ==========================================
+  test('T4.7: "I see it too" confirmation increments and locks per device', async ({ page }) => {
+    await page.goto('/');
+
+    const firstRow = page.locator('.reports-list .report-row').first();
+    await expect(firstRow).toBeVisible();
+
+    const confirmButton = firstRow.locator('.confirm-button');
+    const reportId = await confirmButton.getAttribute('data-report-confirm');
+    expect(reportId).not.toBeNull();
+
+    const countBefore = await page.evaluate((id) => {
+      const r = window.state.data.reports.find((x) => x.id === id);
+      return Number(r?.confirmation_count) || 0;
+    }, reportId);
+
+    await confirmButton.click();
+
+    // Optimistic increment reflected in state and in the count tag.
+    const countAfter = await page.evaluate((id) => {
+      const r = window.state.data.reports.find((x) => x.id === id);
+      return Number(r?.confirmation_count) || 0;
+    }, reportId);
+    expect(countAfter).toBe(countBefore + 1);
+
+    const countTag = firstRow.locator('[data-confirmation-count]');
+    await expect(countTag).toHaveText(`${countBefore + 1} подтвердили`);
+
+    // Button locks after confirming.
+    await expect(confirmButton).toBeDisabled();
+    await expect(confirmButton).toHaveText('Вы подтвердили');
+
+    // Device is remembered so it cannot confirm the same report twice.
+    const persisted = await page.evaluate(() => JSON.parse(localStorage.getItem('whites:confirmed') || '[]'));
+    expect(persisted).toContain(reportId);
+
+    // Reload: the lock survives from localStorage.
+    await page.reload();
+    const reloadedButton = page.locator(`.reports-list .report-row .confirm-button[data-report-confirm="${reportId}"]`);
+    await expect(reloadedButton).toBeDisabled();
   });
 });

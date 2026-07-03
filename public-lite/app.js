@@ -175,6 +175,95 @@ function announce(message) {
   if (liveRegion) liveRegion.textContent = message;
 }
 
+const CONFIRMED_STORAGE_KEY = "whites:confirmed";
+const DEVICE_ID_STORAGE_KEY = "whites:device-id";
+
+function deviceId() {
+  try {
+    let id = localStorage.getItem(DEVICE_ID_STORAGE_KEY);
+    if (!id) {
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      id = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+      localStorage.setItem(DEVICE_ID_STORAGE_KEY, id);
+    }
+    return id;
+  } catch {
+    return "anon";
+  }
+}
+
+function confirmedReportIds() {
+  try {
+    const raw = localStorage.getItem(CONFIRMED_STORAGE_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function hasConfirmed(reportId) {
+  return confirmedReportIds().has(reportId);
+}
+
+function rememberConfirmed(reportId) {
+  try {
+    const ids = confirmedReportIds();
+    ids.add(reportId);
+    localStorage.setItem(CONFIRMED_STORAGE_KEY, JSON.stringify([...ids]));
+  } catch {
+    /* приватный режим — обойдёмся без запоминания */
+  }
+}
+
+function findReportById(reportId) {
+  return (state.data.reports || []).find((item) => item.id === reportId);
+}
+
+async function confirmReport(reportId, buttonEl) {
+  if (!reportId || hasConfirmed(reportId)) return;
+  const report = findReportById(reportId);
+  if (!report) return;
+
+  // Оптимистично: инкремент и запоминание устройства до сетевого ответа.
+  rememberConfirmed(reportId);
+  report.confirmation_count = (Number(report.confirmation_count) || 0) + 1;
+  if (buttonEl) {
+    buttonEl.disabled = true;
+    buttonEl.classList.add("is-confirmed");
+    buttonEl.textContent = "Вы подтвердили";
+  }
+  updateConfirmationViews(reportId);
+  announce(`Подтверждено: ${report.city_or_area}, ${report.operator}. Спасибо.`);
+
+  // Лучшее усилие: сохранить на бэке (дедуп/rate-limit там же). Офлайн — остаётся локально.
+  try {
+    await postJson("api/confirm.php", { report_id: reportId, device_id: deviceId() });
+  } catch {
+    /* локальный инкремент уже показан — тихо игнорируем сетевую ошибку */
+  }
+}
+
+function confirmationLabel(report) {
+  return report.confirmation_count ? `${report.confirmation_count} подтвердили` : "";
+}
+
+function updateConfirmationViews(reportId) {
+  const report = findReportById(reportId);
+  if (!report) return;
+  document
+    .querySelectorAll(`[data-confirmation-count="${cssEscape(reportId)}"]`)
+    .forEach((node) => {
+      node.textContent = confirmationLabel(report);
+      node.hidden = !report.confirmation_count;
+    });
+}
+
+function cssEscape(value) {
+  if (window.CSS && typeof CSS.escape === "function") return CSS.escape(value);
+  return String(value).replace(/["\\]/g, "\\$&");
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -428,6 +517,14 @@ function setupFilters() {
     event.preventDefault();
     event.stopPropagation();
     openIssueDialog(trigger.dataset.reportIssue);
+  });
+
+  document.addEventListener("click", (event) => {
+    const trigger = event.target.closest("[data-report-confirm]");
+    if (!trigger) return;
+    event.preventDefault();
+    event.stopPropagation();
+    confirmReport(trigger.dataset.reportConfirm, trigger);
   });
 
   $("#prevStepButton").addEventListener("click", () => {
@@ -1088,19 +1185,20 @@ function getFilteredReports() {
 
 function popupHtml(report) {
   const category = categoryFor(report);
-  const confirmationText = report.confirmation_count ? `${report.confirmation_count} подтвержд.` : "";
   const precisionText = report.approx_location?.precision ? `точность: ${report.approx_location.precision}` : "";
-  const tags = [category.label, freshnessLabels[freshnessFor(report)], report.confidence, confirmationText, precisionText, ...(report.checked_services || []).slice(0, 4)]
+  const tags = [category.label, freshnessLabels[freshnessFor(report)], report.confidence, precisionText, ...(report.checked_services || []).slice(0, 4)]
     .filter(Boolean)
     .map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`)
     .join("");
+  const confirmed = hasConfirmed(report.id);
 
   return `
     <h2 class="popup-title">${escapeHtml(report.city_or_area)}, ${escapeHtml(report.operator)}</h2>
     <p class="popup-meta">${escapeHtml(report.region)} · ${escapeHtml(report.network_type)} · ${escapeHtml(formatTime(report.checked_at))}</p>
     <p class="popup-text">${escapeHtml(report.summary)}</p>
-    <div class="popup-tags">${tags}</div>
+    <div class="popup-tags">${tags}<span class="tag strong" data-confirmation-count="${escapeHtml(report.id)}"${report.confirmation_count ? "" : " hidden"}>${escapeHtml(confirmationLabel(report))}</span></div>
     <div class="popup-actions">
+      <button class="confirm-button${confirmed ? " is-confirmed" : ""}" type="button" data-report-confirm="${escapeHtml(report.id)}"${confirmed ? " disabled" : ""}>${confirmed ? "Вы подтвердили" : "Я тоже это вижу"}</button>
       <button class="issue-report-button" type="button" data-report-issue="${escapeHtml(report.id)}">Пожаловаться</button>
     </div>
   `;
@@ -1489,8 +1587,7 @@ function renderList(reports) {
     const node = template.content.cloneNode(true);
     const row = node.querySelector(".report-row");
     const category = categoryFor(report);
-    const confirmationText = report.confirmation_count ? `${report.confirmation_count} подтвержд.` : "";
-    const tags = [report.confidence, confirmationText, ...(report.checked_services || []).slice(0, 2)].filter(Boolean);
+    const tags = [report.confidence, ...(report.checked_services || []).slice(0, 2)].filter(Boolean);
 
     row.dataset.reportId = report.id;
     const isActive = report.id === state.selectedId;
@@ -1508,14 +1605,27 @@ function renderList(reports) {
     row.querySelector(".row-summary").textContent = report.summary;
     row.querySelector(".issue-report-button").dataset.reportIssue = report.id;
 
+    const confirmButton = row.querySelector(".confirm-button");
+    confirmButton.dataset.reportConfirm = report.id;
+    if (hasConfirmed(report.id)) {
+      confirmButton.disabled = true;
+      confirmButton.classList.add("is-confirmed");
+      confirmButton.textContent = "Вы подтвердили";
+    }
+
     const tagWrap = row.querySelector(".row-tags");
     tags.forEach((value) => {
       const tag = document.createElement("span");
       tag.className = "tag";
-      if (String(value).includes("подтвержд")) tag.classList.add("strong");
       tag.textContent = value;
       tagWrap.appendChild(tag);
     });
+    const confirmTag = document.createElement("span");
+    confirmTag.className = "tag strong";
+    confirmTag.dataset.confirmationCount = report.id;
+    confirmTag.textContent = confirmationLabel(report);
+    confirmTag.hidden = !report.confirmation_count;
+    tagWrap.appendChild(confirmTag);
 
     row.addEventListener("click", (event) => {
       if (event.target.closest("[data-report-issue]")) return;
