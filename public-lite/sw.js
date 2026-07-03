@@ -1,4 +1,4 @@
-const CACHE_NAME = 'whites-v3';
+const CACHE_NAME = 'whites-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -17,7 +17,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS);
-    })
+    }).then(() => self.skipWaiting())
   );
 });
 
@@ -31,7 +31,7 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
@@ -62,7 +62,7 @@ self.addEventListener('fetch', (event) => {
 
   // Оболочка: cache-first.
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
+    caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
       return cachedResponse || fetch(event.request);
     })
   );

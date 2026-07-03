@@ -9,10 +9,8 @@ test.describe('Tier 4: Real-World Workload (5 Test Cases)', () => {
   test('T4.1: Complete mobile report scenario in Telegram', async ({ context }) => {
     // Emulate iPhone 12
     const iphone = devices['iPhone 12'];
-    const page = await context.newPage({
-      ...iphone,
-      userAgent: iphone.userAgent,
-    });
+    const page = await context.newPage();
+    await page.setViewportSize(iphone.viewport);
     
     await page.goto('/');
 
@@ -38,7 +36,7 @@ test.describe('Tier 4: Real-World Workload (5 Test Cases)', () => {
       await pills.nth(0).click(); // Telegram
       await pills.nth(1).click(); // YouTube
     } else {
-      await page.fill('#draftServices', 'Telegram, YouTube');
+      await page.fill('#draftServicesOther', 'Telegram, YouTube');
     }
     await page.click('#nextStepButton');
 
@@ -76,8 +74,14 @@ test.describe('Tier 4: Real-World Workload (5 Test Cases)', () => {
       return localStorage.getItem('whites:reports-cache') !== null || typeof window['state'] !== 'undefined';
     });
 
-    // Wait for Service Worker to be ready
-    await page.evaluate(() => navigator.serviceWorker.ready);
+    // Wait for Service Worker to be ready, but keep the workload bounded.
+    await page.evaluate(async () => {
+      if (!('serviceWorker' in navigator)) return;
+      await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((r) => setTimeout(r, 1500)),
+      ]);
+    });
 
     // Go offline
     await context.setOffline(true);

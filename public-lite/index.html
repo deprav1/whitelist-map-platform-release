@@ -299,14 +299,18 @@
           <div class="wide-field">
             <span>Что проверяли</span>
             <div class="service-pills" id="servicePillsContainer">
-              <button class="service-pill" type="button" data-value="Telegram">Telegram</button>
-              <button class="service-pill" type="button" data-value="YouTube">YouTube</button>
-              <button class="service-pill" type="button" data-value="WhatsApp">WhatsApp</button>
-              <button class="service-pill" type="button" data-value="Банки">Банки</button>
-              <button class="service-pill" type="button" data-value="Госуслуги">Госуслуги</button>
-              <button class="service-pill" type="button" data-value="VPN">VPN</button>
-              <button class="service-pill" type="button" data-value="Такси/Карты">Такси/Карты</button>
+              <button class="service-pill" type="button" data-value="Telegram" aria-pressed="false">Telegram</button>
+              <button class="service-pill" type="button" data-value="YouTube" aria-pressed="false">YouTube</button>
+              <button class="service-pill" type="button" data-value="WhatsApp" aria-pressed="false">WhatsApp</button>
+              <button class="service-pill" type="button" data-value="Банки" aria-pressed="false">Банки</button>
+              <button class="service-pill" type="button" data-value="Госуслуги" aria-pressed="false">Госуслуги</button>
+              <button class="service-pill" type="button" data-value="VPN" aria-pressed="false">VPN</button>
+              <button class="service-pill" type="button" data-value="Такси/Карты" aria-pressed="false">Такси/Карты</button>
             </div>
+            <label class="service-other-field">
+              <span>Другое</span>
+              <input id="draftServicesOther" type="text" name="services_other" autocomplete="off" placeholder="Например: маркетплейс, почта, рабочий VPN">
+            </label>
             <input id="draftServices" type="hidden" name="services" value="">
           </div>
         </div>
@@ -443,6 +447,6 @@
   </dialog>
 
   <script src="vendor/leaflet/leaflet.js?v=1.9.4"></script>
-  <script src="app.js?v=20260703-dark"></script>
+  <script src="app.js?v=20260703-ux"></script>
 </body>
 </html>

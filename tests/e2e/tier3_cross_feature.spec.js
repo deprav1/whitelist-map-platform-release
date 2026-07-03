@@ -5,6 +5,14 @@ test.describe('Tier 3: Cross-Feature Interactions (9 Test Cases)', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    // Wait for the Service Worker to activate (bounded so it never hangs).
+    await page.evaluate(async () => {
+      if (!('serviceWorker' in navigator)) return;
+      await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((r) => setTimeout(r, 1500)),
+      ]);
+    });
   });
 
   test('T3.1: Dark Mode + Glassmorphism (Readability & Contrast)', async ({ page }) => {

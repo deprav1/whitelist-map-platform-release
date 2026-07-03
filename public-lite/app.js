@@ -143,6 +143,15 @@ const searchAliases = {
 };
 
 const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => [...document.querySelectorAll(selector)];
+
+function applyRuntimeCapabilities() {
+  const supportsBackdrop =
+    typeof CSS !== "undefined" &&
+    CSS.supports &&
+    (CSS.supports("backdrop-filter", "blur(1px)") || CSS.supports("-webkit-backdrop-filter", "blur(1px)"));
+  document.documentElement.classList.toggle("no-backdrop-filter", !supportsBackdrop);
+}
 
 function defaultFilters() {
   return {
@@ -392,7 +401,6 @@ function setupFilters() {
     }
   });
 
-  const servicesInput = $("#draftServices");
   const pillsContainer = $("#servicePillsContainer");
   if (pillsContainer) {
     pillsContainer.addEventListener("click", (event) => {
@@ -400,14 +408,16 @@ function setupFilters() {
       if (!button) return;
       
       button.classList.toggle("is-active");
-      
-      const activePills = pillsContainer.querySelectorAll(".service-pill.is-active");
-      const values = Array.from(activePills).map(pill => pill.dataset.value);
-      servicesInput.value = values.join(", ");
-      
+      button.setAttribute("aria-pressed", String(button.classList.contains("is-active")));
+      syncDraftServicesInput();
       updateDraftOutput();
     });
   }
+
+  $("#draftServicesOther")?.addEventListener("input", () => {
+    syncDraftServicesInput();
+    updateDraftOutput();
+  });
 
   document.querySelectorAll("#reportDraftForm input, #reportDraftForm select, #reportDraftForm textarea").forEach((field) => {
     field.addEventListener("input", updateDraftOutput);
@@ -473,6 +483,17 @@ function setMobileView(view) {
   }
 }
 
+function setupResponsiveView() {
+  const mobileQuery = window.matchMedia("(max-width: 720px)");
+  const applyView = () => setMobileView(mobileQuery.matches ? "list" : "map");
+  applyView();
+  if (mobileQuery.addEventListener) {
+    mobileQuery.addEventListener("change", applyView);
+  } else if (mobileQuery.addListener) {
+    mobileQuery.addListener(applyView);
+  }
+}
+
 function openDialog(dialog) {
   if (dialog.showModal) {
     dialog.showModal();
@@ -504,6 +525,7 @@ function showFormStep(stepNum) {
 }
 
 function openReportDialog() {
+  resetReportForm();
   const reports = getFilteredReports();
   const latest = reports[0];
   if (latest) {
@@ -515,11 +537,40 @@ function openReportDialog() {
   openDialog($("#reportDialog"));
 }
 
+function resetReportForm() {
+  const form = $("#reportDraftForm");
+  if (!form) return;
+  form.reset();
+  $$("#servicePillsContainer .service-pill").forEach((pill) => {
+    pill.classList.remove("is-active");
+    pill.setAttribute("aria-pressed", "false");
+  });
+  const servicesInput = $("#draftServices");
+  if (servicesInput) servicesInput.value = "";
+  $("#copyDraftButton").textContent = "Скопировать черновик";
+}
+
+function splitServices(value) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function syncDraftServicesInput() {
+  const servicesInput = $("#draftServices");
+  if (!servicesInput) return;
+  const pillValues = $$("#servicePillsContainer .service-pill.is-active").map((pill) => pill.dataset.value);
+  const manualValues = splitServices($("#draftServicesOther")?.value || "");
+  servicesInput.value = [...new Set([...pillValues, ...manualValues])].join(", ");
+}
+
 function draftValue(selector) {
   return $(selector).value.trim();
 }
 
 function updateDraftOutput() {
+  syncDraftServicesInput();
   const checkedAt = new Date().toLocaleString("ru-RU");
   const summary = draftValue("#draftSummary");
   $("#draftSummaryCounter").textContent = `${summary.length} / 500`;
@@ -557,6 +608,20 @@ async function copyReportDraft() {
 function updateTileModeButton() {
   $("#tileModeButton").textContent = state.useTiles ? "Тайлы вкл" : "Тайлы выкл";
   $("#tileModeButton").setAttribute("aria-pressed", String(state.useTiles));
+}
+
+function updateConnectivityWarning() {
+  const warning = $("#tileWarning");
+  if (!warning) return;
+  if (!navigator.onLine) {
+    warning.hidden = false;
+    return;
+  }
+  if (!state.useTiles) {
+    warning.hidden = false;
+    return;
+  }
+  warning.hidden = true;
 }
 
 function toggleTileMode() {
@@ -1151,19 +1216,27 @@ async function shareCurrentView() {
 }
 
 async function main() {
+  applyRuntimeCapabilities();
   await loadData();
   readFiltersFromUrl();
   readRuntimePreferences();
   setupMap();
   setupFilters();
-  setMobileView(window.matchMedia("(max-width: 720px)").matches ? "list" : "map");
+  setupResponsiveView();
   render({ fit: true });
+  updateConnectivityWarning();
+  window.addEventListener("offline", updateConnectivityWarning);
+  window.addEventListener("online", updateConnectivityWarning);
 
+  // main() is async and awaits data before reaching this point, so the
+  // window "load" event has usually already fired — register directly
+  // instead of waiting for it (otherwise the listener never runs).
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js").catch(() => {});
-    });
+    navigator.serviceWorker.register("sw.js").catch(() => {});
   }
 }
+
+// Expose runtime state for debugging and offline E2E checks.
+window.state = state;
 
 main();

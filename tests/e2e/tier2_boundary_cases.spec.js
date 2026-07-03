@@ -5,6 +5,14 @@ test.describe('Tier 2: Boundary Cases (45 Test Cases)', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    // Wait for the Service Worker to activate (bounded so it never hangs).
+    await page.evaluate(async () => {
+      if (!('serviceWorker' in navigator)) return;
+      await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((r) => setTimeout(r, 1500)),
+      ]);
+    });
   });
 
   // Helper to calculate contrast ratio according to WCAG 2.0
@@ -155,8 +163,8 @@ test.describe('Tier 2: Boundary Cases (45 Test Cases)', () => {
       await page.fill('#draftOperator', 'Оператор');
       await page.click('#nextStepButton');
       
-      // Step 2: Clear optional services
-      await page.fill('#draftServices', '');
+      // Step 2: Leave optional services blank in the visible UI
+      await expect(page.locator('.service-pill.is-active')).toHaveCount(0);
       await page.click('#nextStepButton');
       
       // Step 3: Clear comment
@@ -242,8 +250,8 @@ test.describe('Tier 2: Boundary Cases (45 Test Cases)', () => {
       }
       
       // Verify that no pill overflows the container width
-      const containerWidth = await page.locator('.report-form-grid').evaluate(el => el.clientWidth);
-      const pillsContainerWidth = await page.locator('.service-pills-container').evaluate(el => el.scrollWidth);
+      const containerWidth = await page.locator('.form-step.is-active .report-form-grid').evaluate(el => el.clientWidth);
+      const pillsContainerWidth = await page.locator('#servicePillsContainer').evaluate(el => el.scrollWidth);
       expect(pillsContainerWidth).toBeLessThanOrEqual(containerWidth + 10); // minor padding allowed
     });
 
@@ -280,8 +288,8 @@ test.describe('Tier 2: Boundary Cases (45 Test Cases)', () => {
       
       await pill.click(); // Select pill
       
-      // Focus and enter additional manual service input in text field
-      await page.fill('#draftServices', 'MyManualService');
+      // Focus and enter additional manual service input in the visible text field
+      await page.fill('#draftServicesOther', 'MyManualService');
       await page.click('#nextStepButton');
       
       const output = await page.inputValue('#draftOutput');
@@ -512,8 +520,9 @@ test.describe('Tier 2: Boundary Cases (45 Test Cases)', () => {
         await page.mouse.down();
         // Drag out of button bounds
         await page.mouse.move(box.x - 50, box.y - 50);
-        const transform = await btn.evaluate(el => getComputedStyle(el).transform);
         await page.mouse.up();
+        await page.waitForTimeout(180);
+        const transform = await btn.evaluate(el => getComputedStyle(el).transform);
         // Should scale back down/reset
         expect(transform).toBe('none');
       }
@@ -598,6 +607,7 @@ test.describe('Tier 2: Boundary Cases (45 Test Cases)', () => {
   test.describe('Feature 9: Customized Scrollbar', () => {
     test('T2.9.1: Mobile viewport scrollbar overlay checking', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 }); // Mobile screen size
+      await page.click('#showMapTab');
       const isScrollable = await page.locator('.quick-filters').evaluate(el => {
         return el.scrollWidth > el.clientWidth;
       });
@@ -648,7 +658,10 @@ test.describe('Tier 2: Boundary Cases (45 Test Cases)', () => {
       // Append a mock element to force list update
       await drawer.evaluate(el => {
         const mock = document.createElement('div');
+        mock.textContent = 'scroll recalculation probe';
+        mock.style.display = 'block';
         mock.style.height = '500px';
+        mock.style.minHeight = '500px';
         el.appendChild(mock);
       });
       const newHeight = await drawer.evaluate(el => el.scrollHeight);

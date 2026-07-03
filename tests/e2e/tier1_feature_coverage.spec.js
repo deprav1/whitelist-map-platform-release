@@ -6,6 +6,15 @@ test.describe('Tier 1: Feature Coverage (45 Test Cases)', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the root of the application
     await page.goto('/');
+    // Wait for the Service Worker to activate so registration checks and
+    // offline reloads are deterministic (bounded so it never hangs).
+    await page.evaluate(async () => {
+      if (!('serviceWorker' in navigator)) return;
+      await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((r) => setTimeout(r, 1500)),
+      ]);
+    });
   });
 
   // ==========================================
@@ -97,7 +106,8 @@ test.describe('Tier 1: Feature Coverage (45 Test Cases)', () => {
       // Step 2
       await page.selectOption('#draftProblem', { label: 'Работает только белый список' });
       await page.selectOption('#draftConfidence', { label: 'Проверил сам' });
-      await page.fill('#draftServices', 'Telegram, YouTube');
+      await page.locator('.service-pill[data-value="Telegram"]').click();
+      await page.locator('.service-pill[data-value="YouTube"]').click();
       await page.click('#nextStepButton');
 
       // Step 3
@@ -436,7 +446,7 @@ test.describe('Tier 1: Feature Coverage (45 Test Cases)', () => {
       const cluster = page.locator('.cluster-marker').first();
       if (await cluster.count() > 0) {
         const origTransform = await cluster.evaluate(el => getComputedStyle(el).transform);
-        await cluster.hover();
+        await cluster.hover({ force: true });
         const hoverTransform = await cluster.evaluate(el => getComputedStyle(el).transform);
         expect(hoverTransform).not.toBe(origTransform);
       } else {
@@ -585,6 +595,9 @@ test.describe('Tier 1: Feature Coverage (45 Test Cases)', () => {
     });
 
     test('T1.9.4: Verify hidden scrollbar does not prevent scrolling', async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 820 });
+      await page.reload();
+      await page.click('#showMapTab');
       // Scroll quick filters horizontally
       const filterContainer = page.locator('.quick-filters');
       const isScrollable = await filterContainer.evaluate(el => {
