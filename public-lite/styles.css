@@ -1124,6 +1124,42 @@ button.filter-chip:hover {
   gap: 6px;
 }
 
+.row-actions,
+.popup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.issue-report-button {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border: 1px solid rgba(251, 191, 36, 0.22);
+  border-radius: var(--radius-full);
+  background: rgba(251, 191, 36, 0.08);
+  color: #f8d486;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  transition: all var(--duration) var(--ease);
+}
+
+.issue-report-button:hover {
+  border-color: rgba(251, 191, 36, 0.42);
+  background: rgba(251, 191, 36, 0.14);
+  color: #fde68a;
+}
+
+.issue-report-button:focus-visible {
+  box-shadow:
+    0 0 0 3px rgba(251, 191, 36, 0.18),
+    inset 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
 /* ========================================
    Tags
    ======================================== */
@@ -1193,6 +1229,11 @@ button.filter-chip:hover {
   color: #f8fafc;
 }
 
+#issueDialog .modal-body {
+  background: #181c25;
+  color: #f8fafc;
+}
+
 .service-pills,
 .operator-pills {
   display: flex;
@@ -1215,7 +1256,9 @@ button.filter-chip:hover {
 }
 
 #reportDialog .operator-pill,
-#reportDialog .service-pill {
+#reportDialog .service-pill,
+#issueDialog .operator-pill,
+#issueDialog .service-pill {
   background: #2a3140;
   border-color: #4b5567;
   color: #eef2f7;
@@ -1228,7 +1271,9 @@ button.filter-chip:hover {
 }
 
 #reportDialog .operator-pill:hover,
-#reportDialog .service-pill:hover {
+#reportDialog .service-pill:hover,
+#issueDialog .operator-pill:hover,
+#issueDialog .service-pill:hover {
   background: #343d4e;
   border-color: #6b7280;
 }
@@ -1262,7 +1307,9 @@ button.filter-chip:hover {
 }
 
 #reportDialog .service-other-field,
-#reportDialog .operator-choice-field {
+#reportDialog .operator-choice-field,
+#issueDialog .service-other-field,
+#issueDialog .operator-choice-field {
   color: #f8fafc;
 }
 
@@ -1362,7 +1409,11 @@ button.filter-chip:hover {
 #reportDialog .report-form-grid input,
 #reportDialog .report-form-grid select,
 #reportDialog .report-form-grid textarea,
-#reportDialog .draft-output {
+#reportDialog .draft-output,
+#issueDialog .report-form-grid input,
+#issueDialog .report-form-grid select,
+#issueDialog .report-form-grid textarea,
+#issueDialog .draft-output {
   background: #252b38;
   border-color: #596273;
   color: #ffffff;
@@ -1377,7 +1428,9 @@ button.filter-chip:hover {
 }
 
 #reportDialog .report-form-grid input::placeholder,
-#reportDialog .report-form-grid textarea::placeholder {
+#reportDialog .report-form-grid textarea::placeholder,
+#issueDialog .report-form-grid input::placeholder,
+#issueDialog .report-form-grid textarea::placeholder {
   color: #c4cad5;
 }
 
@@ -1394,7 +1447,11 @@ button.filter-chip:hover {
 #reportDialog .report-form-grid input:focus,
 #reportDialog .report-form-grid select:focus,
 #reportDialog .report-form-grid textarea:focus,
-#reportDialog .draft-output:focus {
+#reportDialog .draft-output:focus,
+#issueDialog .report-form-grid input:focus,
+#issueDialog .report-form-grid select:focus,
+#issueDialog .report-form-grid textarea:focus,
+#issueDialog .draft-output:focus {
   background: #303746;
   border-color: #10b981;
   box-shadow:

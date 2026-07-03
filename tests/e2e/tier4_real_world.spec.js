@@ -1,7 +1,7 @@
 // @ts-check
 const { test, expect, devices } = require('@playwright/test');
 
-test.describe('Tier 4: Real-World Workload (5 Test Cases)', () => {
+test.describe('Tier 4: Real-World Workload (6 Test Cases)', () => {
 
   // ==========================================
   // T4.1: Полный сценарий мобильного отчета в Telegram
@@ -225,5 +225,41 @@ test.describe('Tier 4: Real-World Workload (5 Test Cases)', () => {
 
     const selectedOperator = await page.locator('#operatorFilter option:checked').textContent();
     expect(selectedOperator?.trim()).toBe('МегаФон');
+  });
+
+  // ==========================================
+  // T4.6: Жалоба на опасную публичную отметку
+  // ==========================================
+  test('T4.6: Safety complaint draft for a public report', async ({ context, page }) => {
+    await page.goto('/');
+
+    const issueButton = page.locator('.reports-list .issue-report-button').first();
+    await expect(issueButton).toBeVisible();
+    await issueButton.click();
+
+    await expect(page.locator('#issueDialog')).toBeVisible();
+    await page.selectOption('#issueReason', { label: 'Персональные данные или точный адрес' });
+    await page.fill('#issueComment', 'Проверьте, не раскрывает ли запись лишние детали');
+
+    const draft = await page.inputValue('#issueDraftOutput');
+    expect(draft).toContain('WhiteS: жалоба на публичную отметку');
+    expect(draft).toContain('ID отметки:');
+    expect(draft).toContain('Персональные данные или точный адрес');
+    expect(draft).toContain('Проверьте, не раскрывает ли запись лишние детали');
+
+    const [newPage] = await Promise.all([
+      page.waitForEvent('popup', { timeout: 5000 }).catch(() => null),
+      page.click('#submitIssueButton')
+    ]);
+
+    expect(newPage).not.toBeNull();
+    if (newPage) {
+      const urlObj = new URL(newPage.url());
+      expect(urlObj.origin).toBe('https://t.me');
+      expect(urlObj.pathname).toBe('/WhiteS_Bot');
+      const textParam = urlObj.searchParams.get('text') || '';
+      expect(textParam).toContain('жалоба на публичную отметку');
+      expect(textParam).toContain('Персональные данные или точный адрес');
+    }
   });
 });

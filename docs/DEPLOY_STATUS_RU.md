@@ -6,10 +6,11 @@
 
 - Рабочий публичный URL: https://kidai.website/whites/
 - Проверка после деплоя: HTTP 200.
-- Версия фронтенда в HTML: `app.js?v=20260703-p0-form-seo`.
-- Версия CSS в HTML: `styles.css?v=20260703-p0-form-seo`.
-- Версия Service Worker cache: `whites-v7`.
+- Версия фронтенда в HTML: `app.js?v=20260703-p0-issue`.
+- Версия CSS в HTML: `styles.css?v=20260703-p0-issue`.
+- Версия Service Worker cache: `whites-v8`.
 - SEO/PWA: опубликованы `sitemap.xml`, `robots.txt` с sitemap, JSON-LD, `og-image.png`, PNG icons 192/512 + maskable.
+- Safety UX: опубликована кнопка жалобы на публичную отметку в карточках и popup; жалоба формируется как Telegram-черновик без запроса контактов.
 - Публичные формулировки используют только рабочий статус модерируемых данных.
 - Мобильная карта и список обновлены в UX-релизе `ff79b8b`.
 - Архив для ручной загрузки: `tmp/whites-public-lite.zip`.
@@ -54,4 +55,4 @@ node --check public-lite\sw.js
 npm test
 ```
 
-Итог E2E: `104 passed`.
+Итог E2E: `105 passed`.

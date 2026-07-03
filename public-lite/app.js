@@ -80,7 +80,9 @@ const state = {
   useTiles: true,
   filters: defaultFilters(),
   currentFormStep: 1,
-  submitInProgress: false
+  submitInProgress: false,
+  issueReportId: null,
+  issueSubmitInProgress: false
 };
 
 const categoryMeta = {
@@ -392,6 +394,38 @@ function setupFilters() {
   $("#footerRules").addEventListener("click", () => openDialog($("#rulesDialog")));
   $("#footerPrivacy").addEventListener("click", () => openDialog($("#privacyDialog")));
 
+  $("#issueReason")?.addEventListener("change", updateIssueDraft);
+  $("#issueComment")?.addEventListener("input", updateIssueDraft);
+  $("#copyIssueDraftButton")?.addEventListener("click", copyIssueDraft);
+  $("#submitIssueButton")?.addEventListener("click", (event) => {
+    const submitButton = event.currentTarget;
+    event.preventDefault();
+    if (state.issueSubmitInProgress) {
+      return;
+    }
+    updateIssueDraft();
+    const targetUrl = submitButton.href;
+    state.issueSubmitInProgress = true;
+    submitButton.setAttribute("aria-disabled", "true");
+    submitButton.removeAttribute("href");
+    window.open(targetUrl, "_blank", "noopener");
+    const dialog = $("#issueDialog");
+    if (dialog) {
+      setTimeout(() => {
+        if (dialog.close) dialog.close();
+        else dialog.removeAttribute("open");
+      }, 80);
+    }
+  });
+
+  document.addEventListener("click", (event) => {
+    const trigger = event.target.closest("[data-report-issue]");
+    if (!trigger) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openIssueDialog(trigger.dataset.reportIssue);
+  });
+
   $("#prevStepButton").addEventListener("click", () => {
     if (state.currentFormStep > 1) {
       showFormStep(state.currentFormStep - 1);
@@ -420,13 +454,16 @@ function setupFilters() {
 
   $("#submitFormButton").addEventListener("click", (event) => {
     const submitButton = event.currentTarget;
+    event.preventDefault();
     if (state.submitInProgress) {
-      event.preventDefault();
       return;
     }
     updateDraftOutput();
+    const targetUrl = submitButton.href;
     state.submitInProgress = true;
     submitButton.setAttribute("aria-disabled", "true");
+    submitButton.removeAttribute("href");
+    window.open(targetUrl, "_blank", "noopener");
     const dialog = $("#reportDialog");
     if (dialog) {
       setTimeout(() => {
@@ -629,6 +666,69 @@ function resetReportForm() {
   submitButton.disabled = false;
   submitButton.removeAttribute("aria-disabled");
   state.submitInProgress = false;
+}
+
+function reportById(id) {
+  return publishedReports().find((report) => report.id === id);
+}
+
+function openIssueDialog(reportId) {
+  const report = reportById(reportId);
+  if (!report) return;
+  state.issueReportId = report.id;
+  resetIssueForm(report);
+  updateIssueDraft();
+  openDialog($("#issueDialog"));
+  announce(`Открыта жалоба на отметку ${report.id}`);
+}
+
+function resetIssueForm(report) {
+  const category = categoryFor(report);
+  $("#issueReportSummary").value = `${report.id} · ${report.city_or_area}, ${report.operator} · ${category.label} · ${formatTime(report.checked_at)}`;
+  $("#issueReason").selectedIndex = 0;
+  $("#issueComment").value = "";
+  $("#issueCommentCounter").textContent = "0 / 400";
+  $("#copyIssueDraftButton").textContent = "Скопировать";
+  const submitButton = $("#submitIssueButton");
+  submitButton.removeAttribute("aria-disabled");
+  state.issueSubmitInProgress = false;
+}
+
+function updateIssueDraft() {
+  const report = reportById(state.issueReportId);
+  if (!report) return;
+  const category = categoryFor(report);
+  const comment = draftValue("#issueComment");
+  $("#issueCommentCounter").textContent = `${comment.length} / 400`;
+  const lines = [
+    "WhiteS: жалоба на публичную отметку",
+    `ID отметки: ${report.id}`,
+    `Место: ${report.region}, ${report.city_or_area}`,
+    `Оператор: ${report.operator}`,
+    `Статус: ${category.label}`,
+    `Время проверки: ${formatTime(report.checked_at)}`,
+    `Причина: ${$("#issueReason").value}`,
+    `Комментарий: ${comment || "нет"}`,
+    "",
+    "Пожалуйста, проверьте запись. Я не добавляю свои контакты, точный адрес или новые персональные данные."
+  ];
+  $("#issueDraftOutput").value = lines.join("\n");
+  $("#submitIssueButton").href = `https://t.me/WhiteS_Bot?text=${encodeURIComponent($("#issueDraftOutput").value)}`;
+}
+
+async function copyIssueDraft() {
+  updateIssueDraft();
+  try {
+    await navigator.clipboard.writeText($("#issueDraftOutput").value);
+    $("#copyIssueDraftButton").textContent = "Скопировано";
+    announce("Жалоба скопирована");
+  } catch {
+    $("#copyIssueDraftButton").textContent = "Скопируйте вручную";
+    announce("Не удалось скопировать жалобу автоматически");
+  }
+  setTimeout(() => {
+    $("#copyIssueDraftButton").textContent = "Скопировать";
+  }, 1400);
 }
 
 function syncOperatorPills() {
@@ -865,6 +965,9 @@ function popupHtml(report) {
     <p class="popup-meta">${escapeHtml(report.region)} · ${escapeHtml(report.network_type)} · ${escapeHtml(formatTime(report.checked_at))}</p>
     <p class="popup-text">${escapeHtml(report.summary)}</p>
     <div class="popup-tags">${tags}</div>
+    <div class="popup-actions">
+      <button class="issue-report-button" type="button" data-report-issue="${escapeHtml(report.id)}">Пожаловаться</button>
+    </div>
   `;
 }
 
@@ -1263,6 +1366,7 @@ function renderList(reports) {
     row.querySelector(".row-status-label").textContent = category.label;
     row.querySelector(".row-meta").textContent = `${report.region} · ${report.network_type} · ${formatTime(report.checked_at)} · ${freshnessLabels[freshnessFor(report)]}`;
     row.querySelector(".row-summary").textContent = report.summary;
+    row.querySelector(".issue-report-button").dataset.reportIssue = report.id;
 
     const tagWrap = row.querySelector(".row-tags");
     tags.forEach((value) => {
@@ -1273,7 +1377,16 @@ function renderList(reports) {
       tagWrap.appendChild(tag);
     });
 
-    row.addEventListener("click", () => selectReport(report.id, true));
+    row.addEventListener("click", (event) => {
+      if (event.target.closest("[data-report-issue]")) return;
+      selectReport(report.id, true);
+    });
+    row.addEventListener("keydown", (event) => {
+      if (!["Enter", " "].includes(event.key)) return;
+      if (event.target.closest("button, a")) return;
+      event.preventDefault();
+      selectReport(report.id, true);
+    });
     fragment.appendChild(node);
   });
 

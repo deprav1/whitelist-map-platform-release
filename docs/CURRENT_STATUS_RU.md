@@ -41,6 +41,7 @@ https://whites.kidai.website/
 - Проектный workflow и локальный Codex skill `whites-project` для следующих итераций.
 - Проведён аудит сервиса и дизайна: `docs/SERVICE_DESIGN_AUDIT_PLAN_RU.md`.
 - Добавлена SEO-персона в консилиум, sitemap/robots, JSON-LD, PNG Open Graph image и PWA icons.
+- Добавлена жалоба на опасную или ошибочную публичную отметку: из карточки и popup открывается безопасный Telegram-черновик для модерации.
 
 ## Деплой
 
@@ -86,7 +87,7 @@ node --check public-lite\app.js
 - Подготовить экспорт реальных модерированных данных из Ushahidi в `reports.json`.
 - Добавить страницу правил, приватности и FAQ в публичную карту.
 - Использовать `docs/WORKFLOWS_AND_SKILLS_RU.md` как стартовый маршрут для каждой новой задачи.
-- Продолжить P0 из `docs/SERVICE_DESIGN_AUDIT_PLAN_RU.md`: рабочий report loop, жалоба на опасную запись, модерационный экспорт.
+- Продолжить P0 из `docs/SERVICE_DESIGN_AUDIT_PLAN_RU.md`: рабочий report loop и модерационный экспорт.
 
 ## Важное по безопасности
 

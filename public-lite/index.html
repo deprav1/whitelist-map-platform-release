@@ -29,7 +29,7 @@
   <title>WhiteS — карта доступности интернета в России</title>
   <meta name="description" content="WhiteS показывает публичные модерируемые отметки об отключениях интернета, режиме белого списка, частичных сбоях сервисов и восстановлении доступа.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.9.4">
-  <link rel="stylesheet" href="styles.css?v=20260703-p0-form-seo">
+  <link rel="stylesheet" href="styles.css?v=20260703-p0-issue">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -267,7 +267,7 @@
   </div>
 
   <template id="reportTemplate">
-    <button class="report-row" type="button">
+    <article class="report-row" role="button" tabindex="0">
       <span class="row-status"></span>
       <span class="row-content">
         <span class="row-title-line">
@@ -277,8 +277,11 @@
         <span class="row-meta"></span>
         <span class="row-summary"></span>
         <span class="row-tags"></span>
+        <span class="row-actions">
+          <button class="issue-report-button" type="button">Пожаловаться</button>
+        </span>
       </span>
-    </button>
+    </article>
   </template>
 
   <dialog class="modal" id="reportDialog" aria-labelledby="reportDialogTitle">
@@ -407,6 +410,53 @@
     </form>
   </dialog>
 
+  <dialog class="modal" id="issueDialog" aria-labelledby="issueDialogTitle">
+    <form class="modal-body" id="issueDraftForm" method="dialog">
+      <header class="modal-head">
+        <div>
+          <h2 id="issueDialogTitle">Пожаловаться на отметку</h2>
+          <p>Сайт не сохраняет жалобу автоматически. Можно скопировать текст или открыть Telegram-бота с готовым черновиком для модерации.</p>
+        </div>
+        <button class="icon-button" value="close" type="submit" aria-label="Закрыть">×</button>
+      </header>
+
+      <section class="modal-warning">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Не добавляйте свои контакты, точный адрес или новые персональные данные. Достаточно id отметки и причины.</span>
+      </section>
+
+      <div class="report-form-grid">
+        <label class="wide-field">
+          <span>Отметка</span>
+          <input id="issueReportSummary" type="text" readonly>
+        </label>
+        <label class="wide-field">
+          <span>Причина</span>
+          <select id="issueReason" name="reason">
+            <option>Персональные данные или точный адрес</option>
+            <option>Неверный статус или устаревшие данные</option>
+            <option>Спам, реклама или мошенничество</option>
+            <option>Опасная формулировка</option>
+            <option>Дубль другой отметки</option>
+            <option>Другое</option>
+          </select>
+        </label>
+        <label class="wide-field">
+          <span>Комментарий для модератора</span>
+          <textarea id="issueComment" rows="3" maxlength="400" placeholder="Кратко: что нужно проверить. Без личных данных."></textarea>
+          <small id="issueCommentCounter">0 / 400</small>
+        </label>
+      </div>
+
+      <textarea class="draft-output" id="issueDraftOutput" readonly aria-label="Черновик жалобы"></textarea>
+
+      <div class="modal-actions">
+        <button class="ghost-button" id="copyIssueDraftButton" type="button">Скопировать</button>
+        <a class="primary-button" id="submitIssueButton" href="https://t.me/WhiteS_Bot" target="_blank" rel="noopener">Открыть Telegram</a>
+      </div>
+    </form>
+  </dialog>
+
   <dialog class="modal" id="aboutDialog" aria-labelledby="aboutDialogTitle">
     <form class="modal-body" method="dialog">
       <header class="modal-head">
@@ -514,6 +564,6 @@
   </dialog>
 
   <script src="vendor/leaflet/leaflet.js?v=1.9.4"></script>
-  <script src="app.js?v=20260703-p0-form-seo"></script>
+  <script src="app.js?v=20260703-p0-issue"></script>
 </body>
 </html>
