@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f1117"/>
+      <stop offset="1" stop-color="#151b26"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#059669" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#059669" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="920" cy="180" r="340" fill="url(#glow)"/>
+  <!-- brand mark -->
+  <g transform="translate(96 150)">
+    <circle cx="44" cy="44" r="42" fill="none" stroke="#34d399" stroke-width="5"/>
+    <circle cx="44" cy="44" r="25" fill="none" stroke="#34d399" stroke-width="5" opacity="0.6"/>
+    <circle cx="44" cy="44" r="8" fill="#34d399"/>
+  </g>
+  <text x="212" y="212" font-family="'Segoe UI',system-ui,sans-serif" font-size="72" font-weight="700" fill="#ffffff">WhiteS</text>
+  <text x="96" y="340" font-family="'Segoe UI',system-ui,sans-serif" font-size="58" font-weight="700" fill="#ffffff">Карта доступности интернета</text>
+  <text x="96" y="418" font-family="'Segoe UI',system-ui,sans-serif" font-size="34" fill="#9aa4b2">Пользовательские отметки об отключениях и режиме</text>
+  <text x="96" y="464" font-family="'Segoe UI',system-ui,sans-serif" font-size="34" fill="#9aa4b2">белого списка в России — в реальном времени</text>
+  <!-- privacy pill -->
+  <g transform="translate(96 520)">
+    <rect width="320" height="56" rx="28" fill="#059669" fill-opacity="0.15" stroke="#059669" stroke-opacity="0.5"/>
+    <circle cx="34" cy="28" r="7" fill="#34d399"/>
+    <text x="58" y="37" font-family="'Segoe UI',system-ui,sans-serif" font-size="26" fill="#34d399">Приватно · без регистрации</text>
+  </g>
+</svg>

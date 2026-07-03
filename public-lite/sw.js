@@ -1,10 +1,11 @@
-const CACHE_NAME = 'whites-v2';
+const CACHE_NAME = 'whites-v3';
 const ASSETS = [
   './',
   './index.html',
   './app.js',
   './styles.css',
   './manifest.json',
+  './og-image.svg',
   './vendor/leaflet/leaflet.css',
   './vendor/leaflet/leaflet.js',
   './vendor/leaflet/images/marker-icon.png',
@@ -35,10 +36,31 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // reports.json и другие динамические данные всегда берем из сети
-  if (event.request.url.includes('reports.json') || event.request.url.includes('public-reports.json')) {
+  if (event.request.method !== 'GET') return;
+
+  const url = event.request.url;
+  const isData = url.includes('reports.json') || url.includes('public-reports.json');
+
+  if (isData) {
+    // stale-while-revalidate: мгновенно отдаём кэш, в фоне обновляем.
+    // Офлайн — остаёмся на последнем успешном ответе (честный «старый» кэш).
+    event.respondWith(
+      caches.open(CACHE_NAME).then((cache) =>
+        cache.match(event.request).then((cached) => {
+          const network = fetch(event.request)
+            .then((response) => {
+              if (response && response.ok) cache.put(event.request, response.clone());
+              return response;
+            })
+            .catch(() => cached);
+          return cached || network;
+        })
+      )
+    );
     return;
   }
+
+  // Оболочка: cache-first.
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       return cachedResponse || fetch(event.request);
