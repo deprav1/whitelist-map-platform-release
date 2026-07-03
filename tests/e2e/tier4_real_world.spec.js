@@ -252,20 +252,23 @@ test.describe('Tier 4: Real-World Workload (6 Test Cases)', () => {
     expect(draft).toContain('Персональные данные или точный адрес');
     expect(draft).toContain('Проверьте, не раскрывает ли запись лишние детали');
 
-    const [newPage] = await Promise.all([
-      page.waitForEvent('popup', { timeout: 5000 }).catch(() => null),
-      page.click('#submitIssueButton')
-    ]);
+    // Assert on the button href deterministically (popup capture is racy).
+    const submitIssue = page.locator('#submitIssueButton');
+    const href = await submitIssue.getAttribute('href');
+    expect(href).not.toBeNull();
+    const urlObj = new URL(href);
+    expect(urlObj.origin).toBe('https://t.me');
+    expect(urlObj.pathname).toBe('/WhiteS_Bot');
+    const textParam = urlObj.searchParams.get('text') || '';
+    expect(textParam).toContain('жалоба на публичную отметку');
+    expect(textParam).toContain('Персональные данные или точный адрес');
 
+    // The click opens the Telegram draft in a new tab.
+    const [newPage] = await Promise.all([
+      page.waitForEvent('popup', { timeout: 15000 }).catch(() => null),
+      submitIssue.click()
+    ]);
     expect(newPage).not.toBeNull();
-    if (newPage) {
-      const urlObj = new URL(newPage.url());
-      expect(urlObj.origin).toBe('https://t.me');
-      expect(urlObj.pathname).toBe('/WhiteS_Bot');
-      const textParam = urlObj.searchParams.get('text') || '';
-      expect(textParam).toContain('жалоба на публичную отметку');
-      expect(textParam).toContain('Персональные данные или точный адрес');
-    }
   });
 
   // ==========================================
@@ -342,5 +345,36 @@ test.describe('Tier 4: Real-World Workload (6 Test Cases)', () => {
         })
     );
     expect(grades.every((g) => g && /trust-(high|medium|low)/.test(g))).toBe(true);
+  });
+
+  // ==========================================
+  // T4.9: Deep-link ?report=<id> открывает и подсвечивает отметку
+  // ==========================================
+  test('T4.9: report deep-link selects and highlights the target report', async ({ page }) => {
+    await page.goto('/?report=report-002');
+
+    // The targeted report becomes the selected one in app state.
+    await page.waitForFunction(() => window.state && window.state.selectedId === 'report-002');
+
+    // Its list row is marked active/current.
+    const row = page.locator('.report-row[data-report-id="report-002"]');
+    await expect(row).toHaveClass(/is-active/);
+    await expect(row).toHaveAttribute('aria-current', 'true');
+
+    // Header share now produces a report-specific permalink + text.
+    const shared = await page.evaluate(async () => {
+      const calls = [];
+      const original = navigator.share;
+      navigator.share = (data) => { calls.push(data); return Promise.resolve(); };
+      try {
+        await document.querySelector('#shareButton').click();
+      } finally {
+        navigator.share = original;
+      }
+      return calls[0] || null;
+    });
+    expect(shared).not.toBeNull();
+    expect(shared.url).toContain('?report=report-002');
+    expect(shared.text).toContain('WhiteS');
   });
 });

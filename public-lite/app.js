@@ -429,6 +429,53 @@ function writeFiltersToUrl() {
   window.history.replaceState(null, "", nextUrl);
 }
 
+// Латинско-безопасный слаг региона для deep-link и будущих SEO-URL.
+function regionSlug(name) {
+  return normalizeText(name).replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "");
+}
+
+// Постоянные ссылки для шеринга: карта с подсвеченной отметкой или регионом.
+function reportShareUrl(reportId) {
+  return `${window.location.origin}${window.location.pathname}?report=${encodeURIComponent(reportId)}`;
+}
+
+function regionShareUrl(region) {
+  return `${window.location.origin}${window.location.pathname}?region=${encodeURIComponent(regionSlug(region))}`;
+}
+
+function scrollReportRowIntoView(reportId) {
+  const row = document.querySelector(`.report-row[data-report-id="${cssEscape(reportId)}"]`);
+  if (row) row.scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
+// Открыть цель из deep-link (?report=<id> / ?region=<slug>) после первого рендера.
+// Параметры передаём из main() — render() успевает переписать URL и стереть их.
+function openDeepLinkTargets(params) {
+  const regionParam = params.get("region");
+  if (regionParam) {
+    const target = publishedReports().find(
+      (r) => regionSlug(r.region) === regionParam || normalizeText(r.region) === normalizeText(regionParam)
+    );
+    if (target && !state.filters.search) {
+      state.filters.search = target.region;
+      hydrateSearchFromUrlEarly();
+      syncFilterControls();
+      render({ fit: true });
+    }
+  }
+
+  const reportParam = params.get("report");
+  if (reportParam && publishedReports().some((r) => r.id === reportParam)) {
+    setMobileView("list");
+    // renderList() добавляет строки в requestAnimationFrame — выбираем отметку
+    // после этого кадра, иначе строка ещё не в DOM и не получит is-active.
+    requestAnimationFrame(() => {
+      selectReport(reportParam, true);
+      scrollReportRowIntoView(reportParam);
+    });
+  }
+}
+
 function setupFilters() {
   const reports = publishedReports();
   fillSelect($("#problemFilter"), unique(reports.map((report) => report.problem_type)), "Все проблемы");
@@ -1726,8 +1773,13 @@ function render(options = {}) {
 }
 
 async function shareCurrentView() {
-  const url = window.location.href;
-  const text = shareTextForCurrentView();
+  // Если выбрана конкретная отметка — делимся постоянной ссылкой на неё и
+  // точным текстом инцидента (это виральная единица для мессенджеров).
+  const selected = state.selectedId
+    ? publishedReports().find((report) => report.id === state.selectedId)
+    : null;
+  const url = selected ? reportShareUrl(selected.id) : window.location.href;
+  const text = selected ? shareTextForReport(selected) : shareTextForCurrentView();
   try {
     if (navigator.share) {
       await navigator.share({ title: "WhiteS", text, url });
@@ -1755,8 +1807,20 @@ function shareTextForCurrentView() {
   return `WhiteS: ${reportCountLabel(reports.length)}${scope}, ${freshPart}. Проверьте регион и добавьте наблюдение без контактов.`;
 }
 
+// Точный текст для шеринга конкретного инцидента: место, статус, подтверждения.
+function shareTextForReport(report) {
+  const category = categoryFor(report);
+  const confirmations = Number(report.confirmation_count) || 0;
+  const confirmPart = confirmations
+    ? `, подтвердили ${confirmations}`
+    : "";
+  return `WhiteS: ${report.city_or_area}, ${report.operator} — ${category.label}${confirmPart} (${freshnessLabels[freshnessFor(report)]}). Проверьте свой регион на карте.`;
+}
+
 async function main() {
   applyRuntimeCapabilities();
+  // Захватываем deep-link параметры до первого render() — он перепишет URL.
+  const deepLinkParams = new URLSearchParams(window.location.search);
   readFiltersFromUrl();
   hydrateSearchFromUrlEarly();
   await loadData();
@@ -1765,6 +1829,7 @@ async function main() {
   setupFilters();
   setupResponsiveView();
   render({ fit: true });
+  openDeepLinkTargets(deepLinkParams);
   updateConnectivityWarning();
   window.addEventListener("offline", updateConnectivityWarning);
   window.addEventListener("online", updateConnectivityWarning);
