@@ -76,6 +76,9 @@ test.describe('Tier 4: Real-World Workload (5 Test Cases)', () => {
       return localStorage.getItem('whites:reports-cache') !== null || typeof window['state'] !== 'undefined';
     });
 
+    // Wait for Service Worker to be ready
+    await page.evaluate(() => navigator.serviceWorker.ready);
+
     // Go offline
     await context.setOffline(true);
     await page.reload();
@@ -113,7 +116,7 @@ test.describe('Tier 4: Real-World Workload (5 Test Cases)', () => {
     await page.keyboard.press('Tab');
     
     let activeElementId = await page.evaluate(() => document.activeElement?.id);
-    expect(activeElementId).not.toBeNull();
+    expect(activeElementId).not.toBe('');
 
     // Check contrast ratio of default body text
     const contrast = await page.evaluate(() => {
@@ -201,8 +204,8 @@ test.describe('Tier 4: Real-World Workload (5 Test Cases)', () => {
     await page.selectOption('#operatorFilter', { label: 'МегаФон' });
 
     // Verify URL parameters updated automatically
-    const url = page.url();
-    expect(url).toContain('q=Краснодар');
+    const url = decodeURIComponent(page.url());
+    expect(url).toContain('search=Краснодар');
     expect(url).toContain('problem=');
     expect(url).toContain('operator=');
 

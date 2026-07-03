@@ -105,11 +105,14 @@ test.describe('Tier 3: Cross-Feature Interactions (9 Test Cases)', () => {
   });
 
   test('T3.6: Inset Box-Shadow + Dark Mode (Focus indicators contrast)', async ({ page }) => {
-    await page.focus('#searchInput');
-    const shadow = await page.locator('#searchInput').evaluate(el => getComputedStyle(el).boxShadow);
+    await page.emulateMedia({ colorScheme: 'dark' });
+    const searchInput = page.locator('#searchInput');
+    await searchInput.click();
+    await expect(searchInput).toBeFocused();
+    const shadow = await searchInput.evaluate(el => getComputedStyle(el).boxShadow);
     // Focus shadow should contain emerald/cyan colors characteristic of brand glow on dark background
     expect(shadow).not.toBe('none');
-    expect(shadow).toMatch(/rgb\(5,\s*150,\s*9\)/); // Brand emerald (#059669) in RGB
+    expect(shadow).toMatch(/rgba?\(5,\s*150,\s*105/); // Brand emerald (#059669) in RGB
   });
 
   test('T3.7: Interactive Service Pills + Inset Box-Shadow (Pill click triggers tactile states)', async ({ page }) => {

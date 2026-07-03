@@ -42,13 +42,23 @@ const server = http.createServer((req, res) => {
   });
 });
 
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[HTTP Server] Error: Port ${PORT} is already in use.`);
+  } else {
+    console.error('[HTTP Server] Error:', err);
+  }
+  process.exit(1);
+});
+
 server.listen(PORT, () => {
   console.log(`[HTTP Server] Running on http://localhost:${PORT}`);
   
   const args = ['playwright', 'test', ...process.argv.slice(2)];
   console.log(`[Test Runner] Executing: npx ${args.join(' ')}`);
   
-  const testProcess = spawn('npx', args, { stdio: 'inherit', shell: true });
+  const env = { ...process.env, TEST_URL: `http://localhost:${PORT}` };
+  const testProcess = spawn('npx', args, { stdio: 'inherit', shell: true, env });
   
   testProcess.on('close', (code) => {
     console.log(`[Test Runner] Playwright process exited with code ${code}`);
