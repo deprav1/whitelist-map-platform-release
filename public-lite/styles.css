@@ -13,6 +13,9 @@
   --surface: rgba(255, 255, 255, 0.03);
   --surface-soft: rgba(255, 255, 255, 0.05);
   --surface-muted: rgba(255, 255, 255, 0.08);
+  --field-bg: rgba(255, 255, 255, 0.09);
+  --field-bg-focus: rgba(255, 255, 255, 0.12);
+  --field-line: rgba(255, 255, 255, 0.18);
   --ink: #f3f4f6;
   --ink-light: #d1d5db;
   --muted: #9ca3af;
@@ -1169,6 +1172,7 @@ button.filter-chip:hover {
   padding: 0;
   box-shadow: var(--shadow-lg);
   overflow: hidden;
+  background: rgba(24, 27, 36, 0.98);
 }
 
 .modal::backdrop {
@@ -1181,17 +1185,24 @@ button.filter-chip:hover {
   display: grid;
   gap: 16px;
   padding: 22px;
-  background: var(--surface);
+  background: rgba(24, 27, 36, 0.98);
 }
 
-.service-pills {
+#reportDialog .modal-body {
+  background: #181c25;
+  color: #f8fafc;
+}
+
+.service-pills,
+.operator-pills {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 8px;
 }
 
-.service-pill {
+.service-pill,
+.operator-pill {
   padding: 8px 14px;
   background: var(--surface-soft);
   border: 1px solid var(--line);
@@ -1203,12 +1214,27 @@ button.filter-chip:hover {
   transition: all var(--duration) var(--ease);
 }
 
-.service-pill:hover {
+#reportDialog .operator-pill,
+#reportDialog .service-pill {
+  background: #2a3140;
+  border-color: #4b5567;
+  color: #eef2f7;
+}
+
+.service-pill:hover,
+.operator-pill:hover {
   background: var(--surface-muted);
   border-color: rgba(255, 255, 255, 0.15);
 }
 
-.service-pill.is-active {
+#reportDialog .operator-pill:hover,
+#reportDialog .service-pill:hover {
+  background: #343d4e;
+  border-color: #6b7280;
+}
+
+.service-pill.is-active,
+.operator-pill.is-active {
   background: var(--brand-soft);
   border-color: var(--brand);
   color: var(--brand-text);
@@ -1219,18 +1245,25 @@ button.filter-chip:hover {
   transform: translateY(-1px) scale(1.02);
 }
 
-.service-other-field {
+.service-other-field,
+.operator-choice-field {
   display: grid;
   gap: 6px;
   margin-top: 10px;
-  color: var(--muted);
+  color: var(--ink-light);
   font-size: 12px;
   font-weight: 800;
 }
 
-.service-other-field span {
+.service-other-field span,
+.operator-choice-field > span {
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+#reportDialog .service-other-field,
+#reportDialog .operator-choice-field {
+  color: #f8fafc;
 }
 
 .modal-head {
@@ -1248,7 +1281,7 @@ button.filter-chip:hover {
 
 .modal-head p {
   margin: 4px 0 0;
-  color: var(--muted);
+  color: var(--ink-light);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -1293,10 +1326,16 @@ button.filter-chip:hover {
 
 .report-form-grid label {
   display: grid;
-  gap: 5px;
-  color: var(--muted);
+  gap: 7px;
+  color: #eef2f7;
   font-size: 12px;
   font-weight: 800;
+}
+
+.report-form-grid label > span {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #f8fafc;
 }
 
 .report-form-grid small {
@@ -1311,12 +1350,35 @@ button.filter-chip:hover {
 .report-form-grid textarea,
 .draft-output {
   width: 100%;
-  border: 1px solid var(--line);
+  min-height: 44px;
+  border: 1px solid var(--field-line);
   border-radius: var(--radius);
-  background: var(--surface);
+  background: var(--field-bg);
   color: var(--ink);
   padding: 10px 12px;
-  transition: border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
+  transition: background var(--duration) var(--ease), border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
+}
+
+#reportDialog .report-form-grid input,
+#reportDialog .report-form-grid select,
+#reportDialog .report-form-grid textarea,
+#reportDialog .draft-output {
+  background: #252b38;
+  border-color: #596273;
+  color: #ffffff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 1px 0 rgba(0, 0, 0, 0.24);
+}
+
+.report-form-grid input::placeholder,
+.report-form-grid textarea::placeholder {
+  color: #8b93a3;
+}
+
+#reportDialog .report-form-grid input::placeholder,
+#reportDialog .report-form-grid textarea::placeholder {
+  color: #c4cad5;
 }
 
 .report-form-grid input:focus,
@@ -1324,8 +1386,20 @@ button.filter-chip:hover {
 .report-form-grid textarea:focus,
 .draft-output:focus {
   border-color: var(--brand);
+  background: var(--field-bg-focus);
   box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
   outline: none;
+}
+
+#reportDialog .report-form-grid input:focus,
+#reportDialog .report-form-grid select:focus,
+#reportDialog .report-form-grid textarea:focus,
+#reportDialog .draft-output:focus {
+  background: #303746;
+  border-color: #10b981;
+  box-shadow:
+    0 0 0 3px rgba(16, 185, 129, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .wide-field {

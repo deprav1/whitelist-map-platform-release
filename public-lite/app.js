@@ -283,6 +283,13 @@ function readFiltersFromUrl() {
   });
 }
 
+function hydrateSearchFromUrlEarly() {
+  const searchInput = $("#searchInput");
+  if (searchInput && state.filters.search) {
+    searchInput.value = state.filters.search;
+  }
+}
+
 function readRuntimePreferences() {
   const params = new URLSearchParams(window.location.search);
   if (params.get("notiles") === "1") {
@@ -413,12 +420,13 @@ function setupFilters() {
 
   $("#submitFormButton").addEventListener("click", (event) => {
     const submitButton = event.currentTarget;
-    if (state.submitInProgress) return;
+    if (state.submitInProgress) {
+      event.preventDefault();
+      return;
+    }
+    updateDraftOutput();
     state.submitInProgress = true;
     submitButton.setAttribute("aria-disabled", "true");
-    const draftText = $("#draftOutput").value;
-    const botUrl = `https://t.me/WhiteS_Bot?text=${encodeURIComponent(draftText)}`;
-    window.open(botUrl, '_blank');
     const dialog = $("#reportDialog");
     if (dialog) {
       setTimeout(() => {
@@ -440,6 +448,32 @@ function setupFilters() {
       updateDraftOutput();
     });
   }
+
+  const operatorPillsContainer = $("#operatorPillsContainer");
+  if (operatorPillsContainer) {
+    operatorPillsContainer.addEventListener("click", (event) => {
+      const button = event.target.closest(".operator-pill");
+      if (!button) return;
+
+      const wasActive = button.classList.contains("is-active");
+      $$("#operatorPillsContainer .operator-pill").forEach((pill) => {
+        pill.classList.remove("is-active");
+        pill.setAttribute("aria-pressed", "false");
+      });
+
+      if (!wasActive) {
+        button.classList.add("is-active");
+        button.setAttribute("aria-pressed", "true");
+        $("#draftOperator").value = button.dataset.value || "";
+      } else {
+        $("#draftOperator").value = "";
+      }
+
+      updateDraftOutput();
+    });
+  }
+
+  $("#draftOperator")?.addEventListener("input", syncOperatorPills);
 
   $("#draftServicesOther")?.addEventListener("input", () => {
     syncDraftServicesInput();
@@ -569,6 +603,7 @@ function openReportDialog() {
   if (latest) {
     $("#draftArea").value = latest.city_or_area || latest.region || "";
     $("#draftOperator").value = latest.operator || "";
+    syncOperatorPills();
   }
   updateDraftOutput();
   showFormStep(1);
@@ -583,12 +618,26 @@ function resetReportForm() {
     pill.classList.remove("is-active");
     pill.setAttribute("aria-pressed", "false");
   });
+  $$("#operatorPillsContainer .operator-pill").forEach((pill) => {
+    pill.classList.remove("is-active");
+    pill.setAttribute("aria-pressed", "false");
+  });
   const servicesInput = $("#draftServices");
   if (servicesInput) servicesInput.value = "";
   $("#copyDraftButton").textContent = "Скопировать черновик";
-  $("#submitFormButton").disabled = false;
-  $("#submitFormButton").removeAttribute("aria-disabled");
+  const submitButton = $("#submitFormButton");
+  submitButton.disabled = false;
+  submitButton.removeAttribute("aria-disabled");
   state.submitInProgress = false;
+}
+
+function syncOperatorPills() {
+  const operator = draftValue("#draftOperator");
+  $$("#operatorPillsContainer .operator-pill").forEach((pill) => {
+    const isActive = pill.dataset.value === operator;
+    pill.classList.toggle("is-active", isActive);
+    pill.setAttribute("aria-pressed", String(isActive));
+  });
 }
 
 function splitServices(value) {
@@ -629,6 +678,10 @@ function updateDraftOutput() {
     "Без ФИО, телефона, точного адреса, аккаунтов и скриншотов с личными данными."
   ];
   $("#draftOutput").value = lines.join("\n");
+  const submitButton = $("#submitFormButton");
+  if (submitButton) {
+    submitButton.href = `https://t.me/WhiteS_Bot?text=${encodeURIComponent($("#draftOutput").value)}`;
+  }
 }
 
 async function copyReportDraft() {
@@ -1293,8 +1346,9 @@ async function shareCurrentView() {
 
 async function main() {
   applyRuntimeCapabilities();
-  await loadData();
   readFiltersFromUrl();
+  hydrateSearchFromUrlEarly();
+  await loadData();
   readRuntimePreferences();
   setupMap();
   setupFilters();

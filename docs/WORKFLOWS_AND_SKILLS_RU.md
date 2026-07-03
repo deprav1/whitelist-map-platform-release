@@ -202,10 +202,45 @@ Invoke-WebRequest -Uri "https://kidai.website/whites/reports.json" -UseBasicPars
 - digital-safety — данные, логи, трекеры, хранение;
 - продуктовый дизайнер — понятность, мобильный UX, доступность;
 - ресерчер данных — схема, дедупликация, доверие;
+- SEO-оптимизатор — поиск, сниппеты, sitemap, структурированные данные;
 - инфраструктурный lead — деплой, бэкапы, масштабирование;
 - редактор/модератор — тон, правила, опасные формулировки.
 
 Итог консилиума должен быть не “мнения”, а список P0/P1 задач с файлами и критериями готовности.
+
+## Workflow 7: SEO и публичное распространение
+
+Когда использовать:
+
+- меняются title, description, Open Graph, manifest, robots.txt или sitemap;
+- добавляются региональные страницы;
+- нужно улучшить поисковую видимость без роста риска для пользователей.
+
+Входные файлы:
+
+- `public-lite/index.html`;
+- `public-lite/robots.txt`;
+- `public-lite/sitemap.xml`;
+- `public-lite/manifest.json`;
+- `public-lite/reports.json`;
+- `docs/PUBLIC_DATA_CONTRACT.md`;
+- `docs/SAFETY_RU.md`.
+
+Правила:
+
+1. Индексировать только публично безопасные и модерированные данные.
+2. Не создавать страницы по точному адресу, точной геоточке, человеку, месту работы или личному маршруту.
+3. Не добавлять VPN/прокси названия, ссылки, ключи или инструкции ради трафика.
+4. После изменения метаданных обновить cache-busting и проверить live HTML, `robots.txt`, `sitemap.xml`, `manifest.json`.
+5. Для региональных страниц сначала генерировать текстовую сводку из `reports.json`, затем добавлять URL в sitemap.
+
+Критерии готовности:
+
+- основной URL имеет понятные title/description/OG;
+- `robots.txt` указывает на sitemap;
+- `manifest.json` использует реальные PNG 192/512 и maskable icons;
+- structured data не раскрывает ничего сверх публичной карты;
+- `npm test` и релизная проверка проходят.
 
 ## Skill stack для проекта
 
@@ -247,6 +282,7 @@ C:\Users\Lenovo\.codex\skills\whites-project
 - `whites-release`;
 - `whites-data-export`;
 - `whites-ux-review`.
+- `whites-seo`.
 
 ### Security skills
 

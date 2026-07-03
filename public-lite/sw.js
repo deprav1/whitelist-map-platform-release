@@ -1,4 +1,4 @@
-const CACHE_NAME = 'whites-v6';
+const CACHE_NAME = 'whites-v7';
 const ASSETS = [
   './',
   './index.html',
@@ -6,6 +6,11 @@ const ASSETS = [
   './styles.css',
   './manifest.json',
   './og-image.svg',
+  './og-image.png',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-192-maskable.png',
+  './icons/icon-512-maskable.png',
   './vendor/leaflet/leaflet.css',
   './vendor/leaflet/leaflet.js',
   './vendor/leaflet/images/marker-icon.png',

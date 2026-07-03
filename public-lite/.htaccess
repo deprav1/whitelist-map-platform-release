@@ -2,6 +2,7 @@ DirectoryIndex index.html
 Options -Indexes
 
 AddType application/json .json
+AddType application/xml .xml
 AddType text/css .css
 AddType application/javascript .js
 

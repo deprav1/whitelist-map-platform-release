@@ -9,26 +9,77 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="WhiteS">
   <meta property="og:locale" content="ru_RU">
-  <meta property="og:title" content="WhiteS — карта доступности интернета">
-  <meta property="og:description" content="Пользовательские отметки о доступности интернета, отключениях и режиме белого списка в России.">
+  <meta property="og:title" content="WhiteS — карта доступности интернета в России">
+  <meta property="og:description" content="Публичная карта WhiteS показывает, где сообщают об отключениях интернета, режиме белого списка, частичных сбоях и восстановлении доступа.">
   <meta property="og:url" content="https://kidai.website/whites/">
-  <meta property="og:image" content="https://kidai.website/whites/og-image.svg">
-  <meta property="og:image:type" content="image/svg+xml">
+  <meta property="og:image" content="https://kidai.website/whites/og-image.png">
+  <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="WhiteS — карта доступности интернета в России">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="WhiteS — карта доступности интернета">
-  <meta name="twitter:description" content="Пользовательские отметки о доступности интернета, отключениях и режиме белого списка в России.">
-  <meta name="twitter:image" content="https://kidai.website/whites/og-image.svg">
+  <meta name="twitter:title" content="WhiteS — карта доступности интернета в России">
+  <meta name="twitter:description" content="Публичная карта WhiteS показывает, где сообщают об отключениях интернета, режиме белого списка, частичных сбоях и восстановлении доступа.">
+  <meta name="twitter:image" content="https://kidai.website/whites/og-image.png">
   <link rel="canonical" href="https://kidai.website/whites/">
+  <link rel="sitemap" type="application/xml" href="https://kidai.website/whites/sitemap.xml">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23059669'/><path d='M16 8v4m0 4v4m-6-6h4m4 0h4' stroke='white' stroke-width='2.5' stroke-linecap='round'/></svg>">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%230f1117'/><circle cx='90' cy='90' r='58' fill='%23059669'/><path d='M90 52v22m0 32v22m-38-38h22m32 0h22' stroke='white' stroke-width='11' stroke-linecap='round'/></svg>">
-  <title>WhiteS - карта доступности интернета</title>
-  <meta name="description" content="Карта пользовательских отметок о доступности интернета, отключениях и режиме белого списка.">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>WhiteS — карта доступности интернета в России</title>
+  <meta name="description" content="WhiteS показывает публичные модерируемые отметки об отключениях интернета, режиме белого списка, частичных сбоях сервисов и восстановлении доступа.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.9.4">
-  <link rel="stylesheet" href="styles.css?v=20260703-ux2">
+  <link rel="stylesheet" href="styles.css?v=20260703-p0-form-seo">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://kidai.website/whites/#website",
+        "name": "WhiteS",
+        "url": "https://kidai.website/whites/",
+        "inLanguage": "ru-RU",
+        "description": "Карта публичных модерируемых отметок о доступности интернета и сервисов в России.",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://kidai.website/whites/?search={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "Dataset",
+        "@id": "https://kidai.website/whites/reports.json#dataset",
+        "name": "WhiteS public connectivity reports",
+        "url": "https://kidai.website/whites/reports.json",
+        "inLanguage": "ru-RU",
+        "isAccessibleForFree": true,
+        "description": "Модерируемый публичный JSON со сводными отметками пользователей о доступности интернета, операторов и сервисов. Экспорт не содержит авторов, телефонов, email, IP, точных адресов или точных GPS.",
+        "license": "https://kidai.website/whites/",
+        "creator": {
+          "@type": "Organization",
+          "name": "WhiteS"
+        },
+        "distribution": {
+          "@type": "DataDownload",
+          "encodingFormat": "application/json",
+          "contentUrl": "https://kidai.website/whites/reports.json"
+        }
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://kidai.website/whites/#app",
+        "name": "WhiteS",
+        "url": "https://kidai.website/whites/",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Web",
+        "inLanguage": "ru-RU",
+        "isAccessibleForFree": true,
+        "description": "Инструмент для просмотра публичных отметок о доступности интернета, отключениях, режиме белого списка и восстановлении доступа."
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <div class="app-shell">
@@ -260,6 +311,17 @@
             <span>Оператор</span>
             <input id="draftOperator" name="operator" placeholder="МТС, Билайн, Ростелеком" required>
           </label>
+          <div class="wide-field operator-choice-field">
+            <span>Быстрый выбор оператора</span>
+            <div class="operator-pills" id="operatorPillsContainer">
+              <button class="operator-pill" type="button" data-value="МТС" aria-pressed="false">МТС</button>
+              <button class="operator-pill" type="button" data-value="Билайн" aria-pressed="false">Билайн</button>
+              <button class="operator-pill" type="button" data-value="МегаФон" aria-pressed="false">МегаФон</button>
+              <button class="operator-pill" type="button" data-value="Tele2" aria-pressed="false">Tele2</button>
+              <button class="operator-pill" type="button" data-value="Ростелеком" aria-pressed="false">Ростелеком</button>
+              <button class="operator-pill" type="button" data-value="Yota" aria-pressed="false">Yota</button>
+            </div>
+          </div>
           <label class="wide-field">
             <span>Тип сети</span>
             <select id="draftNetwork" name="network">
@@ -340,7 +402,7 @@
         <button class="ghost-button" id="prevStepButton" type="button" style="display: none;">Назад</button>
         <button class="primary-button" id="nextStepButton" type="button">Далее</button>
         <button class="ghost-button" id="copyDraftButton" type="button" style="display: none;">Скопировать черновик</button>
-        <button class="primary-button" id="submitFormButton" type="button" style="display: none;">Открыть Telegram с черновиком</button>
+        <a class="primary-button" id="submitFormButton" href="https://t.me/WhiteS_Bot" target="_blank" rel="noopener" style="display: none;">Открыть Telegram с черновиком</a>
       </div>
     </form>
   </dialog>
@@ -452,6 +514,6 @@
   </dialog>
 
   <script src="vendor/leaflet/leaflet.js?v=1.9.4"></script>
-  <script src="app.js?v=20260703-ux2"></script>
+  <script src="app.js?v=20260703-p0-form-seo"></script>
 </body>
 </html>

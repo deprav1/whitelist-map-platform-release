@@ -6,9 +6,10 @@
 
 - Рабочий публичный URL: https://kidai.website/whites/
 - Проверка после деплоя: HTTP 200.
-- Версия фронтенда в HTML: `app.js?v=20260703-ux2`.
-- Версия CSS в HTML: `styles.css?v=20260703-ux2`.
-- Версия Service Worker cache: `whites-v6`.
+- Версия фронтенда в HTML: `app.js?v=20260703-p0-form-seo`.
+- Версия CSS в HTML: `styles.css?v=20260703-p0-form-seo`.
+- Версия Service Worker cache: `whites-v7`.
+- SEO/PWA: опубликованы `sitemap.xml`, `robots.txt` с sitemap, JSON-LD, `og-image.png`, PNG icons 192/512 + maskable.
 - Публичные формулировки используют только рабочий статус модерируемых данных.
 - Мобильная карта и список обновлены в UX-релизе `ff79b8b`.
 - Архив для ручной загрузки: `tmp/whites-public-lite.zip`.
