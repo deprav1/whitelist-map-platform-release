@@ -122,4 +122,5 @@ docs\WORKFLOWS_AND_SKILLS_RU.md
 - Публичные записи карты: `public-lite/reports.json` и затем синхронизация с безопасным экспортом.
 - Продуктовый план UX: `docs/UX_PRODUCT_PLAN_RU.md`.
 - Workflow и skills: `docs/WORKFLOWS_AND_SKILLS_RU.md`.
+- Аудит сервиса и дизайна: `docs/SERVICE_DESIGN_AUDIT_PLAN_RU.md`.
 - Текущий статус и деплой: `docs/CURRENT_STATUS_RU.md`.

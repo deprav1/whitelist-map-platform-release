@@ -31,6 +31,7 @@ The first project-specific layer lives in:
 * `docs/CONSILIUM_AND_DEVELOPMENT_PLAN_RU.md` - role council, safety rules, and development plan.
 * `docs/UX_PRODUCT_PLAN_RU.md` - user experience principles, states, and next UX backlog.
 * `docs/WORKFLOWS_AND_SKILLS_RU.md` - operating workflows, required skills, and definition of done for agents.
+* `docs/SERVICE_DESIGN_AUDIT_PLAN_RU.md` - service/design audit and prioritized improvement plan.
 * `docs/LOCAL_PATHS_RU.md` - local project map, important paths, deploy targets, and daily commands.
 * `public-lite/` - low-bandwidth read-only frontend prototype.
 * `data/public-reports.sample.json` - sample moderated public data.
