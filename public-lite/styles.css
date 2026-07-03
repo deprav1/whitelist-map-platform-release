@@ -1232,6 +1232,63 @@ button.filter-chip:hover {
 }
 
 /* ========================================
+   Trust indicator
+   ======================================== */
+
+.trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.trust-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.trust-badge.trust-high {
+  color: #6ee7b7;
+  background: rgba(5, 150, 105, 0.14);
+  border-color: rgba(5, 150, 105, 0.3);
+}
+
+.trust-badge.trust-medium {
+  color: #fcd34d;
+  background: rgba(217, 134, 33, 0.14);
+  border-color: rgba(217, 134, 33, 0.3);
+}
+
+.trust-badge.trust-low {
+  color: #9aa4b2;
+  background: rgba(154, 164, 178, 0.1);
+  border-color: rgba(154, 164, 178, 0.24);
+}
+
+.popup-trust {
+  margin: 4px 0 0;
+}
+
+.report-row.is-stale {
+  opacity: 0.62;
+}
+
+.report-row.is-stale:hover,
+.report-row.is-stale.is-active {
+  opacity: 1;
+}
+
+/* ========================================
    Tags
    ======================================== */
 

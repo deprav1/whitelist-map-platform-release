@@ -313,6 +313,25 @@ function normalizeText(value) {
     .trim();
 }
 
+// Вес уверенности источника отметки (0..2) из свободного текста confidence.
+function confidenceWeight(report) {
+  const c = normalizeText(report.confidence);
+  if (c.includes("несколькими")) return 2; // подтверждено несколькими людьми
+  if (c.includes("проверил сам")) return 1; // проверил сам
+  return 0; // со слов знакомых / не указано
+}
+
+// Единый индикатор доверия: свежесть × уверенность × подтверждения → 3 уровня.
+function trustLevel(report) {
+  const fresh = freshnessWeight[freshnessFor(report)] ?? 0; // 0..3
+  const confidence = confidenceWeight(report); // 0..2
+  const confirmations = Math.min(Number(report.confirmation_count) || 0, 10);
+  const score = fresh + confidence + Math.min(confirmations / 2, 3); // 0..8
+  if (score >= 5) return { key: "high", label: "высокая надёжность", className: "trust-high" };
+  if (score >= 2.5) return { key: "medium", label: "средняя надёжность", className: "trust-medium" };
+  return { key: "low", label: "требует проверки", className: "trust-low" };
+}
+
 function sortedReports(reports) {
   return [...reports].sort((a, b) => new Date(b.checked_at) - new Date(a.checked_at));
 }
@@ -1191,10 +1210,12 @@ function popupHtml(report) {
     .map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`)
     .join("");
   const confirmed = hasConfirmed(report.id);
+  const trust = trustLevel(report);
 
   return `
     <h2 class="popup-title">${escapeHtml(report.city_or_area)}, ${escapeHtml(report.operator)}</h2>
     <p class="popup-meta">${escapeHtml(report.region)} · ${escapeHtml(report.network_type)} · ${escapeHtml(formatTime(report.checked_at))}</p>
+    <p class="popup-trust"><span class="trust-badge ${trust.className}">${escapeHtml(trust.label)}</span></p>
     <p class="popup-text">${escapeHtml(report.summary)}</p>
     <div class="popup-tags">${tags}<span class="tag strong" data-confirmation-count="${escapeHtml(report.id)}"${report.confirmation_count ? "" : " hidden"}>${escapeHtml(confirmationLabel(report))}</span></div>
     <div class="popup-actions">
@@ -1589,9 +1610,12 @@ function renderList(reports) {
     const category = categoryFor(report);
     const tags = [report.confidence, ...(report.checked_services || []).slice(0, 2)].filter(Boolean);
 
+    const trust = trustLevel(report);
+
     row.dataset.reportId = report.id;
     const isActive = report.id === state.selectedId;
     row.classList.toggle("is-active", isActive);
+    row.classList.toggle("is-stale", freshnessFor(report) === "stale");
     if (isActive) row.setAttribute("aria-current", "true");
     row.setAttribute(
       "aria-label",
@@ -1601,6 +1625,10 @@ function renderList(reports) {
     row.querySelector(".row-status").setAttribute("aria-label", category.label);
     row.querySelector(".row-title").textContent = `${report.city_or_area}, ${report.operator}`;
     row.querySelector(".row-status-label").textContent = category.label;
+    const trustBadge = row.querySelector(".trust-badge");
+    trustBadge.textContent = trust.label;
+    trustBadge.classList.add(trust.className);
+    trustBadge.setAttribute("title", "Надёжность: свежесть, уверенность источника и подтверждения");
     row.querySelector(".row-meta").textContent = `${report.region} · ${report.network_type} · ${formatTime(report.checked_at)} · ${freshnessLabels[freshnessFor(report)]}`;
     row.querySelector(".row-summary").textContent = report.summary;
     row.querySelector(".issue-report-button").dataset.reportIssue = report.id;

@@ -311,4 +311,36 @@ test.describe('Tier 4: Real-World Workload (6 Test Cases)', () => {
     const reloadedButton = page.locator(`.reports-list .report-row .confirm-button[data-report-confirm="${reportId}"]`);
     await expect(reloadedButton).toBeDisabled();
   });
+
+  // ==========================================
+  // T4.8: Единый индикатор доверия на карточках
+  // ==========================================
+  test('T4.8: Every card shows a trust indicator with a graded level', async ({ page }) => {
+    await page.goto('/');
+
+    const rows = page.locator('.reports-list .report-row');
+    const count = await rows.count();
+    expect(count).toBeGreaterThan(0);
+
+    // Each visible card carries a trust badge with a non-empty, graded label.
+    for (let i = 0; i < count; i += 1) {
+      const badge = rows.nth(i).locator('.trust-badge');
+      await expect(badge).toHaveCount(1);
+      const cls = await badge.getAttribute('class');
+      expect(cls).toMatch(/trust-(high|medium|low)/);
+      const text = (await badge.textContent())?.trim() || '';
+      expect(text.length).toBeGreaterThan(0);
+    }
+
+    // The badge grade is computed in the app (freshness + confidence + confirmations).
+    const grades = await page.evaluate(() =>
+      window.state.data.reports
+        .filter((r) => !r.status || r.status === 'published')
+        .map((r) => {
+          const el = document.querySelector(`.report-row[data-report-id="${r.id}"] .trust-badge`);
+          return el ? el.className : null;
+        })
+    );
+    expect(grades.every((g) => g && /trust-(high|medium|low)/.test(g))).toBe(true);
+  });
 });
