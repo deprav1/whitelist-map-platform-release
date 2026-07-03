@@ -6,9 +6,10 @@
 
 - Рабочий публичный URL: https://kidai.website/whites/
 - Проверка после деплоя: HTTP 200.
-- Версия фронтенда в HTML: `app.js?v=20260703-skeptic-ux`.
-- Версия CSS в HTML: `styles.css?v=20260703-skeptic-ux`.
-- Версия Service Worker cache: `whites-v10`.
+- Версия фронтенда в HTML: `app.js?v=20260703-confirm`.
+- Версия CSS в HTML: `styles.css?v=20260703-confirm`.
+- Версия Service Worker cache: `whites-v11`.
+- Report loop 1.3: подтверждения «Я тоже это вижу» на карточках и в popup; оптимистичный инкремент, один голос на устройство (localStorage), бэкенд `api/confirm.php` с дедупом через `UNIQUE(report_id, device_hash)`. Проверено live: 201 при первом голосе, `already_confirmed` при повторном, `health.php` schema_version 2.
 - SEO/PWA: опубликованы `sitemap.xml`, `robots.txt` с sitemap, JSON-LD, `og-image.png`, PNG icons 192/512 + maskable.
 - Safety UX: опубликована кнопка жалобы на публичную отметку в карточках и popup; жалоба формируется как Telegram-черновик без запроса контактов.
 - Storage MVP: опубликован `public-lite/api/` для приема отчетов и жалоб в приватную SQLite-базу Timeweb с резервным Telegram-черновиком.
@@ -60,7 +61,9 @@ node --check public-lite\sw.js
 npm test
 ```
 
-Итог E2E: `105 passed`.
+Итог E2E: `106 passed` (добавлен T4.7 на цикл подтверждений).
+
+Примечание: в прод-таблице `confirmations` остались 2 тестовые probe-записи (`e2e_probe_delete`, `probe2`) от live-проверки endpoint — безвредны (ссылаются на несуществующие отметки), удалить при следующем доступе к SQLite.
 
 Дополнительно проверено после публикации:
 
