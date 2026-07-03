@@ -1,4 +1,4 @@
-const CACHE_NAME = 'whites-v15';
+const CACHE_NAME = 'whites-v16';
 const ASSETS = [
   './',
   './index.html',
