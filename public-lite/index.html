@@ -29,7 +29,7 @@
   <title>WhiteS — карта доступности интернета в России</title>
   <meta name="description" content="WhiteS показывает публичные модерируемые отметки об отключениях интернета, режиме белого списка, частичных сбоях сервисов и восстановлении доступа.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.9.4">
-  <link rel="stylesheet" href="styles.css?v=20260703-storage">
+  <link rel="stylesheet" href="styles.css?v=20260703-skeptic-ux">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -81,7 +81,7 @@
   }
   </script>
 </head>
-<body>
+<body class="show-list">
   <div class="app-shell">
     <div class="sr-only" id="liveRegion" aria-live="polite"></div>
     <header class="topbar">
@@ -90,9 +90,9 @@
         <span class="tagline">Карта доступности интернета</span>
       </div>
       <div class="top-actions">
-        <span class="status-pill" id="dataBadge">публичные данные</span>
+        <span class="status-pill" id="dataBadge">публичные отметки</span>
         <button class="primary-button" id="reportButton" type="button">Сообщить</button>
-        <button class="primary-button" id="shareButton" type="button">Поделиться</button>
+        <button class="ghost-button compact-share" id="shareButton" type="button">Поделиться</button>
         <button class="overflow-toggle" id="overflowToggle" type="button" aria-label="Ещё" aria-expanded="false" aria-controls="overflowMenu">⋮</button>
         <div class="overflow-menu" id="overflowMenu">
           <button class="ghost-button" id="tileModeButton" type="button">Фон карты выкл</button>
@@ -103,8 +103,8 @@
     </header>
 
     <nav class="mobile-tabs" aria-label="Переключение вида">
-      <button class="mobile-tab is-active" id="showMapTab" type="button" aria-pressed="true">Карта</button>
-      <button class="mobile-tab" id="showListTab" type="button" aria-pressed="false">Список <span id="tabCount" class="tab-badge" hidden>0</span></button>
+      <button class="mobile-tab is-active" id="showListTab" type="button" aria-pressed="true">Список <span id="tabCount" class="tab-badge" hidden>0</span></button>
+      <button class="mobile-tab" id="showMapTab" type="button" aria-pressed="false">Карта</button>
     </nav>
 
     <main class="map-layout">
@@ -122,8 +122,8 @@
           </label>
           <div class="quick-filters" aria-label="Быстрые фильтры">
             <button class="quick-filter is-active" type="button" data-category="all">Все</button>
-            <button class="quick-filter" type="button" data-category="internet-shutdown">Отключения</button>
-            <button class="quick-filter" type="button" data-category="whitelist-only">Белый список</button>
+            <button class="quick-filter" type="button" data-category="internet-shutdown">Нет интернета</button>
+            <button class="quick-filter" type="button" data-category="whitelist-only">Белый режим</button>
             <button class="quick-filter" type="button" data-category="restored">Восстановлено</button>
           </div>
           <label>
@@ -179,16 +179,21 @@
           </div>
           <div>
             <span id="shutdownCount">0</span>
-            <strong>сбоев</strong>
+            <strong>проблем</strong>
           </div>
         </section>
 
         <section class="drawer-head">
           <div>
-            <h1>Что работает сейчас</h1>
+            <h1>Сбои интернета сейчас</h1>
             <p id="updatedAt">обновление...</p>
           </div>
-          <p class="safety-note">Точки примерные. Точные адреса, телефоны и личные данные не публикуются.</p>
+          <p class="safety-note">Проверьте свой регион и оператора по модерируемым отметкам пользователей.</p>
+          <ul class="value-points" aria-label="Как работает WhiteS">
+            <li>без регистрации</li>
+            <li>примерные районы</li>
+            <li>публикация после проверки</li>
+          </ul>
           <p class="source-note" id="sourceNote"></p>
           <div class="drawer-actions">
             <button class="primary-button" id="drawerReportButton" type="button">Сообщить о проблеме</button>
@@ -198,7 +203,7 @@
 
         <section class="insights-panel" aria-label="Быстрый обзор ситуации">
           <header class="section-title">
-            <h2>Сейчас заметнее всего</h2>
+            <h2>Где больше отметок</h2>
             <button class="text-button" id="resetContextButton" type="button">все регионы</button>
           </header>
           <div class="hotspots-list" id="hotspotsList"></div>
@@ -288,8 +293,8 @@
     <form class="modal-body" id="reportDraftForm" method="dialog">
       <header class="modal-head">
         <div>
-          <h2 id="reportDialogTitle">Сообщить наблюдение</h2>
-          <p>Форма не сохраняет введенное на этом сайте. На последнем шаге можно скопировать текст или открыть Telegram-бота с готовым черновиком.</p>
+          <h2 id="reportDialogTitle">Сообщить о сбое</h2>
+          <p>Отчет уйдет в премодерацию. Публично появится только безопасная сводка без контактов, точных адресов и личных данных.</p>
         </div>
         <button class="icon-button" value="close" type="submit" aria-label="Закрыть">×</button>
       </header>
@@ -369,7 +374,7 @@
               <button class="service-pill" type="button" data-value="WhatsApp" aria-pressed="false">WhatsApp</button>
               <button class="service-pill" type="button" data-value="Банки" aria-pressed="false">Банки</button>
               <button class="service-pill" type="button" data-value="Госуслуги" aria-pressed="false">Госуслуги</button>
-              <button class="service-pill" type="button" data-value="VPN" aria-pressed="false">VPN</button>
+              <button class="service-pill" type="button" data-value="Зарубежные сайты" aria-pressed="false">Зарубежные сайты</button>
               <button class="service-pill" type="button" data-value="Такси/Карты" aria-pressed="false">Такси/Карты</button>
             </div>
             <label class="service-other-field">
@@ -381,7 +386,7 @@
         </div>
       </div>
 
-      <!-- Шаг 3: Детали и черновик -->
+      <!-- Шаг 3: детали и резервная отправка -->
       <div class="form-step" data-step="3" aria-hidden="true">
         <div class="report-form-grid">
           <label class="wide-field">
@@ -391,22 +396,20 @@
           </label>
         </div>
 
-        <ul class="privacy-checklist" aria-label="Проверка безопасности перед отправкой">
-          <li>Пишите район или город, а не точный адрес.</li>
-          <li>Описывайте проверенные сервисы, а не личные действия.</li>
-          <li>Не добавляйте названия, ссылки, ключи или инструкции для VPN/прокси.</li>
-          <li>Перед публикацией запись должна пройти модерацию.</li>
-        </ul>
+        <p class="privacy-checklist" aria-label="Проверка безопасности перед отправкой">Перед отправкой: район вместо адреса. Без контактов, аккаунтов, названий, ссылок, ключей или инструкций для VPN/прокси.</p>
 
-        <textarea class="draft-output" id="draftOutput" readonly aria-label="Черновик отчета"></textarea>
+        <details class="fallback-draft">
+          <summary>Показать текст для резервной отправки</summary>
+          <textarea class="draft-output" id="draftOutput" readonly aria-label="Текст отчета для резервной отправки"></textarea>
+        </details>
         <p class="form-status" id="reportSubmitStatus" role="status" aria-live="polite"></p>
       </div>
 
       <div class="modal-actions">
         <button class="ghost-button" id="prevStepButton" type="button" style="display: none;">Назад</button>
         <button class="primary-button" id="nextStepButton" type="button">Далее</button>
-        <button class="primary-button" id="sendModerationButton" type="button" style="display: none;">Отправить на модерацию</button>
-        <button class="ghost-button" id="copyDraftButton" type="button" style="display: none;">Скопировать черновик</button>
+        <button class="primary-button" id="sendModerationButton" type="button" style="display: none;">Отправить</button>
+        <button class="ghost-button" id="copyDraftButton" type="button" style="display: none;">Скопировать текст</button>
         <a class="ghost-button" id="submitFormButton" href="https://t.me/WhiteS_Bot" target="_blank" rel="noopener" style="display: none;">Telegram</a>
       </div>
     </form>
@@ -568,6 +571,6 @@
   </dialog>
 
   <script src="vendor/leaflet/leaflet.js?v=1.9.4"></script>
-  <script src="app.js?v=20260703-storage"></script>
+  <script src="app.js?v=20260703-skeptic-ux"></script>
 </body>
 </html>

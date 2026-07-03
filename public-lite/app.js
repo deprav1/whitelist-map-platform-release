@@ -679,9 +679,9 @@ function resetReportForm() {
   const sendButton = $("#sendModerationButton");
   if (sendButton) {
     sendButton.disabled = false;
-    sendButton.textContent = "Отправить на модерацию";
+    sendButton.textContent = "Отправить";
   }
-  $("#copyDraftButton").textContent = "Скопировать черновик";
+  $("#copyDraftButton").textContent = "Скопировать текст";
   const submitButton = $("#submitFormButton");
   submitButton.disabled = false;
   submitButton.removeAttribute("aria-disabled");
@@ -788,7 +788,7 @@ async function submitIssueToModeration() {
   } catch (error) {
     button.disabled = false;
     button.textContent = "Отправить жалобу";
-    setFormStatus(status, "Не удалось сохранить жалобу. Скопируйте черновик или отправьте через Telegram.", "error");
+    setFormStatus(status, "Не удалось сохранить жалобу. Скопируйте текст или отправьте через Telegram.", "error");
     announce("Не удалось отправить жалобу");
   } finally {
     state.issueApiSubmitInProgress = false;
@@ -829,17 +829,17 @@ function updateDraftOutput() {
   const summary = draftValue("#draftSummary");
   $("#draftSummaryCounter").textContent = `${summary.length} / 500`;
   const lines = [
-    "WhiteS: черновик наблюдения",
+    "WhiteS",
     `Место: ${draftValue("#draftArea") || "не указано"}`,
     `Оператор: ${draftValue("#draftOperator") || "не указано"}`,
-    `Тип сети: ${$("#draftNetwork").value}`,
+    `Сеть: ${$("#draftNetwork").value}`,
     `Проблема: ${$("#draftProblem").value}`,
-    `Что проверяли: ${draftValue("#draftServices") || "не указано"}`,
-    `Время проверки: ${checkedAt}`,
+    `Сервисы: ${draftValue("#draftServices") || "не указано"}`,
+    `Когда: ${checkedAt}`,
     `Уверенность: ${$("#draftConfidence").value}`,
     `Комментарий: ${summary || "нет"}`,
     "",
-    "Без ФИО, телефона, точного адреса, аккаунтов и скриншотов с личными данными."
+    "Без личных данных."
   ];
   $("#draftOutput").value = lines.join("\n");
   const submitButton = $("#submitFormButton");
@@ -881,8 +881,8 @@ async function submitReportToModeration() {
     announce("Отчет отправлен в премодерацию");
   } catch (error) {
     button.disabled = false;
-    button.textContent = "Отправить на модерацию";
-    setFormStatus(status, "Не удалось сохранить отчет. Скопируйте черновик или отправьте через Telegram.", "error");
+    button.textContent = "Отправить";
+    setFormStatus(status, "Не удалось сохранить отчет. Скопируйте текст или отправьте через Telegram.", "error");
     announce("Не удалось отправить отчет");
   } finally {
     state.reportApiSubmitInProgress = false;
@@ -924,13 +924,13 @@ async function copyReportDraft() {
   try {
     await navigator.clipboard.writeText($("#draftOutput").value);
     $("#copyDraftButton").textContent = "Скопировано";
-    announce("Черновик скопирован");
+    announce("Текст отчета скопирован");
   } catch {
     $("#copyDraftButton").textContent = "Скопируйте вручную";
     announce("Не удалось скопировать автоматически");
   }
   setTimeout(() => {
-    $("#copyDraftButton").textContent = "Скопировать черновик";
+    $("#copyDraftButton").textContent = "Скопировать текст";
   }, 1400);
 }
 
@@ -1255,14 +1255,14 @@ function renderSummary(reports) {
   const isCache = state.dataUrl.includes("кэш");
   const isFallback = state.dataUrl.includes("fallback");
   if (isCache) {
-    $("#dataBadge").textContent = "из кэша";
+    $("#dataBadge").textContent = `${reportCountLabel(reports.length)} · кэш`;
     $("#sourceNote").textContent = `Показан последний сохраненный снимок (${formatTime(state.dataSavedAt)}). Публично видны только записи после модерации.`;
   } else if (isFallback) {
-    $("#dataBadge").textContent = "резервный снимок";
+    $("#dataBadge").textContent = `${reportCountLabel(reports.length)} · резерв`;
     $("#sourceNote").textContent = "Основной файл данных не загрузился. Показан резервный публичный снимок без личных данных.";
   } else {
-    $("#dataBadge").textContent = "публичные данные";
-    $("#sourceNote").textContent = "Публично показываются только опубликованные модерацией записи.";
+    $("#dataBadge").textContent = reportCountLabel(reports.length);
+    $("#sourceNote").textContent = "Только модерированные отметки. Места примерные, личные данные не публикуются.";
   }
 
   const countBadge = $("#tabCount");
@@ -1466,13 +1466,18 @@ function renderList(reports) {
     const empty = document.createElement("div");
     empty.className = "empty-state";
     const text = document.createElement("p");
-    text.textContent = "По выбранным фильтрам пока нет опубликованных отметок.";
+    text.textContent = "По выбранным фильтрам пока нет опубликованных отметок. Проверьте другой оператор или добавьте наблюдение после проверки.";
     const reset = document.createElement("button");
     reset.className = "ghost-button";
     reset.type = "button";
     reset.textContent = "Сбросить фильтры";
     reset.addEventListener("click", () => $("#resetFiltersButton").click());
-    empty.append(text, reset);
+    const report = document.createElement("button");
+    report.className = "primary-button";
+    report.type = "button";
+    report.textContent = "Сообщить о сбое";
+    report.addEventListener("click", openReportDialog);
+    empty.append(text, report, reset);
     list.appendChild(empty);
     list.setAttribute("aria-busy", "false");
     return;
@@ -1485,7 +1490,7 @@ function renderList(reports) {
     const row = node.querySelector(".report-row");
     const category = categoryFor(report);
     const confirmationText = report.confirmation_count ? `${report.confirmation_count} подтвержд.` : "";
-    const tags = [category.label, freshnessLabels[freshnessFor(report)], report.confidence, confirmationText, ...(report.checked_services || []).slice(0, 3)].filter(Boolean);
+    const tags = [report.confidence, confirmationText, ...(report.checked_services || []).slice(0, 2)].filter(Boolean);
 
     row.dataset.reportId = report.id;
     const isActive = report.id === state.selectedId;
@@ -1576,12 +1581,13 @@ function render(options = {}) {
 
 async function shareCurrentView() {
   const url = window.location.href;
+  const text = shareTextForCurrentView();
   try {
     if (navigator.share) {
-      await navigator.share({ title: "WhiteS", text: "Карта доступности интернета", url });
+      await navigator.share({ title: "WhiteS", text, url });
       return;
     }
-    await navigator.clipboard.writeText(url);
+    await navigator.clipboard.writeText(`${text}\n${url}`);
     $("#shareButton").textContent = "Скопировано";
   } catch {
     $("#shareButton").textContent = "Ссылка в адресе";
@@ -1590,6 +1596,17 @@ async function shareCurrentView() {
   setTimeout(() => {
     $("#shareButton").textContent = "Поделиться";
   }, 1400);
+}
+
+function shareTextForCurrentView() {
+  const reports = getFilteredReports();
+  const filters = filterLabels().map((item) => item.label).join(", ");
+  const freshCount = reports.filter((report) => ["now", "today"].includes(freshnessFor(report))).length;
+  const scope = filters ? ` по фильтру: ${filters}` : " по России";
+  const freshPart = freshCount
+    ? `${freshCount} ${pluralRu(freshCount, ["свежая", "свежие", "свежих"])}`
+    : "без свежих отметок";
+  return `WhiteS: ${reportCountLabel(reports.length)}${scope}, ${freshPart}. Проверьте регион и добавьте наблюдение без контактов.`;
 }
 
 async function main() {

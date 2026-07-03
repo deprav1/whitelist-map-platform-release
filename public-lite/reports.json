@@ -80,7 +80,7 @@
       "network_type": "Домашний интернет",
       "problem_type": "Сильное замедление",
       "incident_category": "partial-connectivity",
-      "checked_services": ["YouTube", "Зарубежные сайты", "VPN / прокси-категория"],
+      "checked_services": ["YouTube", "Зарубежные сайты"],
       "checked_at": "2026-07-02T16:55:00+03:00",
       "confidence": "Видел массовые жалобы",
       "confirmation_count": 12,

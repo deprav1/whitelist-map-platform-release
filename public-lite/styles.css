@@ -257,6 +257,11 @@ textarea:focus-visible {
   display: none;
 }
 
+.compact-share {
+  color: var(--muted);
+  background: rgba(15, 17, 23, 0.48);
+}
+
 .mobile-tabs {
   display: none;
 }
@@ -760,7 +765,7 @@ textarea:focus-visible {
   font-size: 28px;
   font-weight: 800;
   line-height: 1.12;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .drawer-head p {
@@ -795,6 +800,28 @@ textarea:focus-visible {
 .source-note {
   color: var(--muted);
   font-size: 12px;
+}
+
+.value-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.value-points li {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 /* ========================================
@@ -1478,6 +1505,29 @@ button.filter-chip:hover {
   resize: vertical;
 }
 
+.fallback-draft {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(15, 17, 23, 0.42);
+}
+
+.fallback-draft summary {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.fallback-draft .draft-output {
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
 .form-status {
   min-height: 22px;
   margin: 4px 0 0;
@@ -1538,17 +1588,13 @@ button.filter-chip:hover {
 
 .privacy-checklist {
   margin: 0;
-  padding: 12px 14px 12px 30px;
+  padding: 12px 14px;
   border: 1px solid var(--brand-border);
   border-radius: var(--radius);
   background: var(--brand-soft);
   color: var(--brand-text);
   font-size: 13px;
   line-height: 1.5;
-}
-
-.privacy-checklist li + li {
-  margin-top: 4px;
 }
 
 /* ========================================
@@ -1778,11 +1824,11 @@ button.filter-chip:hover {
   }
 
   #shareButton {
-    order: 3;
+    order: 4;
   }
 
   .overflow-toggle {
-    order: 4;
+    order: 3;
   }
 
   #tileModeButton {
