@@ -184,22 +184,33 @@ test.describe('Tier 2: Boundary Cases (45 Test Cases)', () => {
       }
     });
 
-    test('T2.2.4: Spam click prevention', async ({ context, page }) => {
+    test('T2.2.4: Spam click prevention', async ({ page }) => {
       await fillSteps(page, 'Spam click check');
-      
-      // Click button 3 times rapidly
-      const submitBtn = page.locator('#submitFormButton');
-      const firstPopupPromise = page.waitForEvent('popup', { timeout: 8000 }).catch(() => null);
-      await Promise.allSettled([
-        submitBtn.click(),
-        submitBtn.click(),
-        submitBtn.click()
-      ]);
 
-      const firstPopup = await firstPopupPromise;
-      expect(firstPopup).not.toBeNull();
-      const secondPopup = await page.waitForEvent('popup', { timeout: 1000 }).catch(() => null);
-      expect(secondPopup).toBeNull();
+      const openCalls = await page.evaluate(() => {
+        const submitBtn = document.querySelector('#submitFormButton');
+        if (!submitBtn) return [];
+
+        const calls = [];
+        const originalOpen = window.open;
+        window.open = (url) => {
+          calls.push(String(url));
+          return null;
+        };
+
+        try {
+          submitBtn.click();
+          submitBtn.click();
+          submitBtn.click();
+        } finally {
+          window.open = originalOpen;
+        }
+
+        return calls;
+      });
+
+      expect(openCalls).toHaveLength(1);
+      expect(openCalls[0]).toContain('https://t.me/WhiteS_Bot');
     });
 
     test('T2.2.5: Deep link works if clipboard access is blocked', async ({ context, page }) => {

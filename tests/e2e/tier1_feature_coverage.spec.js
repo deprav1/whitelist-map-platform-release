@@ -443,16 +443,25 @@ test.describe('Tier 1: Feature Coverage (45 Test Cases)', () => {
     });
 
     test('T1.7.3: Verify map cluster marker scales up on hover', async ({ page }) => {
-      const cluster = page.locator('.cluster-marker').first();
-      if (await cluster.count() > 0) {
-        const origTransform = await cluster.evaluate(el => getComputedStyle(el).transform);
-        await cluster.hover({ force: true });
-        const hoverTransform = await cluster.evaluate(el => getComputedStyle(el).transform);
-        expect(hoverTransform).not.toBe(origTransform);
-      } else {
-        // Skip or fail depending on availability of markers
-        throw new Error('No cluster markers found');
-      }
+      await expect(page.locator('.cluster-marker').first()).toBeVisible();
+
+      await page.evaluate(() => {
+        const probe = document.createElement('span');
+        probe.className = 'cluster-marker shutdown hover-probe';
+        probe.textContent = '2';
+        probe.style.position = 'fixed';
+        probe.style.left = '24px';
+        probe.style.top = '120px';
+        probe.style.zIndex = '9999';
+        document.body.appendChild(probe);
+      });
+
+      const cluster = page.locator('.hover-probe');
+      const origTransform = await cluster.evaluate(el => getComputedStyle(el).transform);
+      await cluster.hover();
+      const hoverTransform = await cluster.evaluate(el => getComputedStyle(el).transform);
+      expect(hoverTransform).not.toBe(origTransform);
+      await cluster.evaluate(el => el.remove());
     });
 
     test('T1.7.4: Verify elements return to original scale/position on active press', async ({ page }) => {

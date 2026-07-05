@@ -23,6 +23,7 @@ WhiteS — аварийная карта доступности интернет
 - `docs/PUBLIC_DATA_CONTRACT.md` — какие данные можно показывать публично;
 - этот документ — какой workflow выбрать.
 - `docs/PRODUCT_UX_SEO_COMMISSION_RU.md` — обязательная рамка для product/UX/design/SEO решений.
+- `docs/MEGA_ACTION_PLAN_RU.md` — текущий исполняемый backlog по P0/P1/P2.
 
 Если задача про интерфейс, дополнительно читать `docs/UX_PRODUCT_PLAN_RU.md`.
 

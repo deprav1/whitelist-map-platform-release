@@ -1,10 +1,40 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 
 const PORT = process.env.PORT || 8080;
 const PUBLIC_DIR = path.join(__dirname, '..', 'public-lite');
+
+function runPhpTestsIfAvailable() {
+  const phpCheck = spawnSync('php', ['-v'], { encoding: 'utf8' });
+  if (phpCheck.error && phpCheck.error.code === 'ENOENT') {
+    console.log('[PHP Tests] Skipped: php not found on this machine.');
+    return;
+  }
+  if (phpCheck.status !== 0) {
+    console.error('[PHP Tests] Failed to check php version.');
+    process.exit(phpCheck.status || 1);
+  }
+
+  const tests = [
+    path.join(__dirname, 'php', 'admin_export_confirmation_test.php'),
+  ];
+
+  for (const testPath of tests) {
+    console.log(`[PHP Tests] Executing: php ${path.relative(process.cwd(), testPath)}`);
+    const result = spawnSync('php', [testPath], { stdio: 'inherit' });
+    if (result.error) {
+      console.error('[PHP Tests] Failed to start php:', result.error);
+      process.exit(1);
+    }
+    if (result.status !== 0) {
+      process.exit(result.status || 1);
+    }
+  }
+}
+
+runPhpTestsIfAvailable();
 
 const MIME_TYPES = {
   '.html': 'text/html',

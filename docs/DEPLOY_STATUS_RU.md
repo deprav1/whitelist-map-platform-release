@@ -2,6 +2,18 @@
 
 Дата: 2026-07-06
 
+## Mega-plan + confirmation aggregation slice
+
+- Добавлен исполняемый mega-plan: `docs/MEGA_ACTION_PLAN_RU.md`.
+- Выполнен P0-slice `Подтверждения в public export`: при пересборке админкой `reports.json` теперь считает `confirmation_count` как базовый счетчик `public_reports` плюс уникальные записи из таблицы `confirmations`.
+- Повторная пересборка не должна удваивать счетчик: JSON-only записи сохраняются как есть, а DB-записи пересчитываются от базового значения в `public_reports`.
+- Добавлен PHP regression test `tests/php/admin_export_confirmation_test.php`; локально он пропускается, если на машине нет `php`, и запускается автоматически в окружениях с PHP.
+- Проверки: `node --check public-lite\app.js`, `node --check public-lite\sw.js`, `node --check tests\run_tests.js`, `.\scripts\validate-public-data.ps1`, `npm test` -> `108 passed`, `.\scripts\package-public-lite.ps1`.
+- Серверный PHP 8.2: `php -l` для deployed `admin/index.php` на обоих путях, regression test в `/tmp` -> `admin_export_confirmation_test OK`.
+- Деплой выполнен на `https://kidai.website/whites/` и в серверный каталог будущего `whites.kidai.website`.
+- Live-check: главная `200`, `api/health.php` `200` + `X-Robots-Tag`, `reports.json` `200` + `X-Robots-Tag`, `/admin/` `200` + `X-Robots-Tag`; deployed admin содержит `admin_confirmation_counts`.
+- `Resolve-DnsName whites.kidai.website` все еще не готов.
+
 ## Product/UX/SEO commission + SEO safety cleanup
 
 - Создана комиссия product/UX/design/SEO: `docs/PRODUCT_UX_SEO_COMMISSION_RU.md`.

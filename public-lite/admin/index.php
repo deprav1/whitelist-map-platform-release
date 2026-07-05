@@ -77,6 +77,11 @@ function admin_json_decode(?string $json): array
 
 function admin_reports_path(): string
 {
+    $envPath = getenv('WHITES_REPORTS_PATH');
+    if (is_string($envPath) && trim($envPath) !== '') {
+        return trim($envPath);
+    }
+
     return dirname(__DIR__) . DIRECTORY_SEPARATOR . 'reports.json';
 }
 
@@ -100,8 +105,25 @@ function admin_freshness(string $checkedAt): string
     return 'stale';
 }
 
-function admin_public_report_from_row(array $row): array
+function admin_confirmation_counts(PDO $pdo): array
 {
+    $counts = [];
+    $rows = $pdo->query('SELECT report_id, COUNT(*) AS c FROM confirmations GROUP BY report_id')->fetchAll();
+    foreach ($rows as $row) {
+        $reportId = (string)($row['report_id'] ?? '');
+        if ($reportId !== '') {
+            $counts[$reportId] = (int)($row['c'] ?? 0);
+        }
+    }
+
+    return $counts;
+}
+
+function admin_public_report_from_row(array $row, int $deviceConfirmations = 0): array
+{
+    $baseConfirmations = max(0, (int)($row['confirmation_count'] ?? 0));
+    $confirmationCount = min(999, $baseConfirmations + max(0, $deviceConfirmations));
+
     $report = [
         'id' => $row['id'],
         'status' => 'published',
@@ -114,7 +136,7 @@ function admin_public_report_from_row(array $row): array
         'checked_services' => admin_json_decode($row['checked_services_json'] ?? '[]'),
         'checked_at' => $row['checked_at'],
         'confidence' => $row['confidence'],
-        'confirmation_count' => (int)$row['confirmation_count'],
+        'confirmation_count' => $confirmationCount,
         'freshness' => admin_freshness((string)$row['checked_at']),
         'summary' => $row['summary'],
     ];
@@ -154,9 +176,11 @@ function admin_export_public_reports(PDO $pdo): int
         }
     }
 
+    $confirmationCounts = admin_confirmation_counts($pdo);
     $rows = $pdo->query("SELECT * FROM public_reports WHERE status = 'published'")->fetchAll();
     foreach ($rows as $row) {
-        $report = admin_public_report_from_row($row);
+        $reportId = (string)($row['id'] ?? '');
+        $report = admin_public_report_from_row($row, $confirmationCounts[$reportId] ?? 0);
         $reportsById[$report['id']] = $report;
     }
 
