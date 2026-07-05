@@ -1,6 +1,19 @@
 # Статус деплоя WhiteS
 
-Дата: 2026-07-04
+Дата: 2026-07-06
+
+## Product/UX/SEO commission + SEO safety cleanup
+
+- Создана комиссия product/UX/design/SEO: `docs/PRODUCT_UX_SEO_COMMISSION_RU.md`.
+- Добавлены agent runbooks: `.agents/product-ux-seo/README.md`, `.agents/roadmap/README.md`.
+- Скорректирован 2-месячный план: сначала confirmation aggregation, затем privacy-safe analytics, mobile clarity gate, regional page safety spec и только потом генератор `/r/<region>/`.
+- `reports.json` удален из `public-lite/sitemap.xml`.
+- В `.htaccess` добавлен `X-Robots-Tag: noindex, noarchive` для JSON/PHP служебных ответов.
+- `SpecialAnnouncement` снят как DoD-цель; для региональных страниц ориентир `WebPage`/`Dataset`/`ItemList`.
+- Деплой выполнен на `https://kidai.website/whites/` и в серверный каталог будущего `whites.kidai.website`.
+- Live-check вручную: главная `200`, sitemap `200`, `reports.json` `200` + `X-Robots-Tag`, `api/health.php` `200` + `X-Robots-Tag`, `api/og.php` `200 image/png` + `X-Robots-Tag`, `share.php?region=moskva` `200` + `X-Robots-Tag`; sitemap не содержит `reports.json`.
+- `Resolve-DnsName whites.kidai.website` все еще не готов.
+- Замечание: deploy script на Windows успешно распаковал архив, но в конце remote shell печатает CRLF warnings вида `$'\r': command not found`; нужна отдельная мелкая правка скрипта нормализации remote bash-команд.
 
 ## Growth-релиз (Фазы A + B)
 

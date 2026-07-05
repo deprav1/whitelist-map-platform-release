@@ -21,7 +21,7 @@ E2E 106/106, Этап 0 закрыт.
 |---|---|---:|---|
 | Стиль | Тёмный glassmorphism, CartoDB Dark Matter, изумруд, форс-тёмная, микроанимации, неон-маркеры | 7.5/10 | Красиво, но не отличимо и не «скриншот-готово». Пустая карта без тайлов выглядит сломанной; нет единого индикатора доверия; нет кадра, который хочется переслать. |
 | Виральность | Контекстный share-текст, `navigator.share`+clipboard, Telegram deep-link, подтверждения | 4.5/10 | Нет `?report=`/`?region=` deep-link; share только в шапке; нет динамического og:image; нет момента «поделись» после действия. |
-| SEO | sitemap (2 URL), robots, JSON-LD (WebSite/Dataset/WebApplication), canonical, og | 5.5/10 | SPA без серверного контента; нет региональных страниц под интент «нет интернета в <город>»; нет `SpecialAnnouncement`; sitemap индексирует `reports.json`. |
+| SEO | sitemap, robots, JSON-LD (WebSite/Dataset/WebApplication), canonical, og | 5.5/10 | SPA без серверного контента; нет региональных страниц под интент «нет интернета в <город>»; исторически sitemap индексировал `reports.json`, это убрано после product/UX/SEO комиссии. |
 
 ## Стратегический тезис: два движка, стиль — множитель
 
@@ -68,7 +68,7 @@ E2E 106/106, Этап 0 закрыт.
 
 ### Фаза C — Pull-движок (SEO intent capture) · ~2 нед
 - Пререндер-страницы `/r/<region-slug>/` из `reports.json` по крону/PHP: текстовая сводка + ссылка в карту с фильтром. (P2.2)
-- `SpecialAnnouncement` + `Dataset` JSON-LD на региональных страницах.
+- `WebPage`/`Dataset`/`ItemList` JSON-LD на региональных страницах, без `SpecialAnnouncement` как DoD-цели.
 - sitemap: добавить региональные URL, убрать `reports.json`; перелинковка карта ↔ регионы.
 
 ### Фаза D — Усиление и удержание · ongoing
@@ -102,5 +102,5 @@ E2E 106/106, Этап 0 закрыт.
 
 - **Фаза A — выполнена и в проде** (v14+): индикатор доверия, 2×2 quick-filters, схематичная карта.
 - **Фаза B — выполнена и в проде** (v17): `?report=`/`?region=` deep-links; отчёт-зависимый шеринг; динамический `api/og.php` (main/region/report, GD PNG, fallback на статику); `share.php` + rewrite отдаёт crawler'у контекстные OG-мета; нудж «Поделиться» после подтверждения.
-- **Дальше — Фаза C (SEO intent capture):** пререндер-страницы `/r/<region>/` из `reports.json`, `SpecialAnnouncement`/`Dataset` на них, расширение `sitemap.xml`.
+- **Дальше — Фаза C (SEO intent capture):** сначала confirmation aggregation и privacy-safe analytics, затем пререндер-страницы `/r/<region>/` из `reports.json`, `WebPage`/`Dataset`/`ItemList` JSON-LD на них, расширение `sitemap.xml`.
 - **Кросс-задача:** приватная аналитика (события `share_clicked`/`confirm_clicked`/…) — чтобы измерять эффект A/B.

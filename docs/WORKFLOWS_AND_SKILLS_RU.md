@@ -22,6 +22,7 @@ WhiteS — аварийная карта доступности интернет
 - `docs/LOCAL_PATHS_RU.md` — где лежат файлы, команды и деплой;
 - `docs/PUBLIC_DATA_CONTRACT.md` — какие данные можно показывать публично;
 - этот документ — какой workflow выбрать.
+- `docs/PRODUCT_UX_SEO_COMMISSION_RU.md` — обязательная рамка для product/UX/design/SEO решений.
 
 Если задача про интерфейс, дополнительно читать `docs/UX_PRODUCT_PLAN_RU.md`.
 
@@ -211,6 +212,20 @@ Invoke-WebRequest -Uri "https://kidai.website/whites/reports.json" -UseBasicPars
 
 Итог консилиума должен быть не “мнения”, а список P0/P1 задач с файлами и критериями готовности.
 
+Для product/UX/design/SEO планирования использовать расширенную комиссию:
+
+- `docs/PRODUCT_UX_SEO_COMMISSION_RU.md`;
+- `.agents/product-ux-seo/README.md`.
+
+Результат такой комиссии обязан содержать:
+
+1. один пользовательский outcome;
+2. список veto/risk;
+3. P0/P1 slices с файлами;
+4. gate-проверки;
+5. нужен ли deploy;
+6. как измерить результат.
+
 ## Workflow 7: SEO и публичное распространение
 
 Когда использовать:
@@ -234,8 +249,12 @@ Invoke-WebRequest -Uri "https://kidai.website/whites/reports.json" -UseBasicPars
 1. Индексировать только публично безопасные и модерированные данные.
 2. Не создавать страницы по точному адресу, точной геоточке, человеку, месту работы или личному маршруту.
 3. Не добавлять VPN/прокси названия, ссылки, ключи или инструкции ради трафика.
-4. После изменения метаданных обновить cache-busting и проверить live HTML, `robots.txt`, `sitemap.xml`, `manifest.json`.
-5. Для региональных страниц сначала генерировать текстовую сводку из `reports.json`, затем добавлять URL в sitemap.
+4. Не добавлять `?report=`, `share.php`, API, `/admin/` или служебные endpoints в sitemap.
+5. OG, share-preview и embed считать публичной публикацией: только safe published fields.
+6. Для JSON/PHP служебных ответов держать `X-Robots-Tag: noindex, noarchive`; robots.txt не считать privacy-защитой.
+7. JSON-LD региональных страниц делать как `WebPage`/`Dataset`/`ItemList`; не использовать `SpecialAnnouncement` как цель rich-result.
+8. После изменения метаданных обновить cache-busting и проверить live HTML, `robots.txt`, `sitemap.xml`, `manifest.json`.
+9. Для региональных страниц сначала генерировать текстовую сводку из `reports.json`, затем добавлять URL в sitemap.
 
 Критерии готовности:
 
@@ -243,7 +262,41 @@ Invoke-WebRequest -Uri "https://kidai.website/whites/reports.json" -UseBasicPars
 - `robots.txt` указывает на sitemap;
 - `manifest.json` использует реальные PNG 192/512 и maskable icons;
 - structured data не раскрывает ничего сверх публичной карты;
+- per-report/share/API/admin URL не индексируются и не попадают в sitemap;
 - `npm test` и релизная проверка проходят.
+
+## Workflow 8: Коррекция плана product/UX/design/SEO
+
+Когда использовать:
+
+- меняется `docs/AGENT_PLAN_2M_RU.md`, roadmap, SEO/growth стратегия;
+- нужно выбрать следующий крупный slice;
+- есть конфликт между удобством, дизайном, SEO, safety и скоростью релиза.
+
+Входные файлы:
+
+- `docs/AGENT_PLAN_2M_RU.md`;
+- `docs/PRODUCT_UX_SEO_COMMISSION_RU.md`;
+- `.agents/product-ux-seo/README.md`;
+- `docs/GROWTH_STRATEGY_RU.md`;
+- `docs/SERVICE_DESIGN_AUDIT_PLAN_RU.md`;
+- `docs/CONSILIUM_AND_DEVELOPMENT_PLAN_RU.md`.
+
+Порядок:
+
+1. Назвать пользовательский цикл, который улучшается: `увидел`, `понял`, `сообщил`, `подтвердил`, `поделился`, `нашел через поиск`.
+2. Провести роли комиссии: product, UX, visual design, SEO, trust/safety, data/moderation, infra.
+3. Отсечь задачи с veto.
+4. Проверить текущий порядок P0: confirmations -> private analytics -> mobile clarity -> regional page spec -> regional generator.
+5. Разбить оставшееся на P0/P1 small releases.
+6. Для каждого slice указать файлы, тесты, visual/SEO/safety gates и deploy-критерий.
+7. Обновить `docs/AGENT_PLAN_2M_RU.md` или отдельный plan doc.
+
+Критерий готовности:
+
+- план можно выполнить агентом без устных пояснений;
+- нет задач, которые требуют точной геолокации, регистрации, внешних трекеров или raw data;
+- первый следующий slice можно начать сразу.
 
 ## Skill stack для проекта
 
@@ -277,6 +330,22 @@ C:\Users\Lenovo\.codex\skills\whites-project
 - тестирования формы, фильтров, Telegram deep-link;
 - визуального контроля после UX-правок.
 
+### Product/UX/SEO agent route
+
+Локальный runbook:
+
+```text
+.agents/product-ux-seo/README.md
+```
+
+Использовать для:
+
+- коррекции roadmap и 2-месячного плана;
+- региональных SEO-страниц;
+- UX/design gate перед релизом;
+- выбора следующего product slice;
+- проверки, что growth не ломает safety.
+
 ### Skill `skill-creator`
 
 Использовать, если нужно создать или обновить проектный Codex skill. Например, если `whites-project` станет слишком большим, его можно разделить на:
@@ -286,6 +355,9 @@ C:\Users\Lenovo\.codex\skills\whites-project
 - `whites-data-export`;
 - `whites-ux-review`.
 - `whites-seo`.
+- `whites-product-commission`.
+
+Перед созданием новых skills сначала обновить `.agents/product-ux-seo/README.md`; отдельный skill нужен только если runbook перестал помещаться в один воспроизводимый маршрут.
 
 ### Security skills
 
