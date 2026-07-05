@@ -1,4 +1,4 @@
-# Субдомен WhiteS на Timeweb
+# Субдомен Где белые списки? на Timeweb
 
 Целевой субдомен:
 
@@ -59,4 +59,30 @@ https://kidai.website/whites/
 ```powershell
 Resolve-DnsName whites.kidai.website
 Invoke-WebRequest -UseBasicParsing https://whites.kidai.website/
+```
+
+После создания DNS и SSL можно прогнать общую warning-only проверку из репозитория:
+
+```powershell
+.\scripts\check-public-lite-live.ps1 -CheckFutureSubdomain
+```
+
+Критерий готовности для переключения людей на новый адрес:
+
+```powershell
+.\scripts\check-public-lite-live.ps1 `
+  -BaseUrl "https://whites.kidai.website/" `
+  -CheckExtendedPages `
+  -ExpectedCacheName "whites-public-lite-offline3"
+```
+
+Эта проверка должна подтвердить главную, FAQ, правила, приватность, `sw.js`, `reports.json`, `api/context.php`, закрытую pending-очередь, TLS и safety audit публичного JSON. Если нужно проверить текущий рабочий URL и будущий субдомен одной командой:
+
+```powershell
+.\scripts\run-public-lite-preflight.ps1 `
+  -IncludeLiveCheck `
+  -CheckExtendedLivePages `
+  -ExpectedCacheName "whites-public-lite-offline3" `
+  -IncludeFutureSubdomainCheck `
+  -FailOnFutureSubdomainIssues
 ```

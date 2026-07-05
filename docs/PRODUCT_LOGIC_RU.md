@@ -1,6 +1,6 @@
 # Product logic
 
-WhiteS is a public map for practical connectivity reports in Russia during censorship, mobile internet shutdowns, whitelist-only periods, throttling, and service failures.
+Где белые списки? is a public map for practical connectivity reports in Russia during censorship, mobile internet shutdowns, whitelist-only periods, throttling, and service failures.
 
 ## Audience need
 
@@ -18,7 +18,7 @@ The first audience is not technical researchers. It is people who need to know w
 
 ## MVP promise
 
-WhiteS answers four questions:
+Где белые списки? answers four questions:
 
 1. What works here right now?
 2. Which operator and network type is affected?

@@ -1,4 +1,4 @@
-# SSH-доступ для публикации WhiteS
+# SSH-доступ для публикации Где белые списки?
 
 Безопасный вариант: не передавать пароль от панели/FTP, а добавить отдельный публичный SSH-ключ.
 
@@ -66,4 +66,4 @@ ssh -i $env:USERPROFILE\.ssh\whites_timeweb_ed25519 -p 22 login@host
 .\scripts\deploy-public-lite-ssh.ps1 -HostName "host" -UserName "login" -RemotePublicHtml "~/Gdeinet/public_html"
 ```
 
-Скрипт соберет `tmp/whites-public-lite.zip`, загрузит на сервер, распакует в `public_html` и покажет список ключевых файлов.
+Скрипт соберет `tmp/whites-public-lite.zip`, уберет известные старые публичные хвосты с серверным архивом в `$HOME/whites-stale-backups`, загрузит архив на сервер, распакует в `public_html` и покажет список ключевых файлов.

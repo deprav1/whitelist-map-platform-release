@@ -1,10 +1,10 @@
 # 30-day development plan
 
-This is the maximum useful one-month plan for WhiteS before and immediately after the first public launch. It assumes one main builder, occasional help from testers/moderators, and Timeweb as the first target host.
+This is the maximum useful one-month plan for Где белые списки? before and immediately after the first public launch. It assumes one main builder, occasional help from testers/moderators, and Timeweb as the first target host.
 
 ## Month Goal
 
-By the end of 30 days WhiteS should be a public beta that Russian users can open from a normal phone, understand in under a minute, and use without registration to check or report internet/connectivity problems safely.
+By the end of 30 days Где белые списки? should be a public beta that Russian users can open from a normal phone, understand in under a minute, and use without registration to check or report internet/connectivity problems safely.
 
 The ideal month-end state:
 
@@ -23,7 +23,7 @@ The ideal month-end state:
 
 - Timeweb deploy path tested.
 - Database migrations complete.
-- Bootstrap creates WhiteS form and categories.
+- Bootstrap creates Где белые списки? form and categories.
 - Default admin password changed.
 - Anonymous reporting works.
 - Moderation is enabled.
@@ -56,7 +56,7 @@ The ideal month-end state:
 
 ### Scenario A: "Internet is broken here"
 
-The user opens WhiteS and wants to know whether the problem is local, operator-specific, or widespread.
+The user opens Где белые списки? and wants to know whether the problem is local, operator-specific, or widespread.
 
 Requirements:
 
@@ -151,7 +151,7 @@ Deliverables:
 
 Deliverables:
 
-- WhiteS survey exists;
+- Где белые списки? survey exists;
 - categories exist;
 - report flow tested;
 - moderation tested.
@@ -161,7 +161,7 @@ Deliverables:
 - Publish privacy policy draft.
 - Publish report rules.
 - Publish "How to read the data" FAQ.
-- Publish "WhiteS does not ask for payment, downloads, phone, email, or passwords" safety/fraud warning.
+- Publish "Где белые списки? does not ask for payment, downloads, phone, email, or passwords" safety/fraud warning.
 
 Deliverables:
 
@@ -431,6 +431,7 @@ Deliverables:
 Deliverables:
 
 - `docs/OPERATIONS_CHECKLIST_RU.md`.
+- `scripts/check-public-lite-live.ps1` for read-only live URL, public JSON safety, pending queue 403, TLS expiry, and future subdomain warning checks.
 
 ### Day 25
 
@@ -512,7 +513,7 @@ Deliverables:
 
 Week 4 success:
 
-- WhiteS is ready for a wider beta.
+- Где белые списки? is ready for a wider beta.
 - There is a working backup/ops routine.
 - Growth triggers are clear.
 
@@ -549,7 +550,7 @@ Do these only if P0 and P1 are stable:
 
 The month is successful if:
 
-- a user can understand WhiteS without explanation;
+- a user can understand Где белые списки? without explanation;
 - a user can submit a safe anonymous report;
 - a moderator can clean and publish reports;
 - published data does not expose personal information;

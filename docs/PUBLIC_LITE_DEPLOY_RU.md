@@ -7,11 +7,14 @@
 Из корня репозитория запустите:
 
 ```powershell
+.\scripts\run-public-lite-preflight.ps1 -IncludeLiveCheck -IncludeBackup
 .\scripts\package-public-lite.ps1
 ```
 
 Скрипт:
 
+- сохранит текущий live `reports.json` в `backups/public-lite/`;
+- при SSH-деплое уберет известные устаревшие публичные хвосты (`admin`, старые `api/*`, старые `icons/manifest/share/og/sitemap`) с серверным архивом в `$HOME/whites-stale-backups`;
 - проверит `data/public-reports.sample.json` через `scripts/validate-public-data.ps1`;
 - соберет `tmp/whites-public-lite.zip` из содержимого папки `public-lite`;
 - напечатает следующие шаги для загрузки.
@@ -43,11 +46,18 @@
 
 - `public_html/index.html`;
 - `public_html/.htaccess`;
+- `public_html/api/context.php`;
+- `public_html/api/observations.php`;
+- `public_html/faq.html`;
 - `public_html/app.js`;
 - `public_html/styles.css`;
+- `public_html/privacy.html`;
 - `public_html/robots.txt`;
 - `public_html/reports.json`;
 - `public_html/reports.sample.json`;
+- `public_html/rules.html`;
+- `public_html/submissions/.htaccess`;
+- `public_html/sw.js`;
 - `public_html/vendor/leaflet/leaflet.css`;
 - `public_html/vendor/leaflet/leaflet.js`;
 - `public_html/vendor/leaflet/images/marker-icon.png`.
@@ -55,6 +65,12 @@
 Если `vendor/leaflet` отсутствует, карта не сможет загрузить Leaflet и останется без интерактивной карты.
 
 Для живых данных заменяйте `public_html/reports.json`. Карта читает его первым. Если его нет, она покажет `reports.sample.json`.
+
+Если на хостинге включен PHP, форма отправки использует `public_html/api/observations.php` и пишет pending-наблюдения в `public_html/submissions/observations-pending.jsonl`. Папка `submissions` должна оставаться закрытой для чтения из браузера; проверьте, что открытие `/submissions/observations-pending.jsonl` не возвращает файл. `public_html/api/context.php` может вернуть только настроенную вручную подсказку региона, без IP-геолокации.
+
+`public_html/sw.js` в легкой версии включает read-only offline-shell. Он кэширует публичную оболочку, FAQ, локальные Leaflet-ассеты и fallback JSON, но не кэширует `api/`, `submissions/`, POST-запросы и внешние тайлы.
+
+Для production желательно задать серверную переменную окружения `WHITES_SUBMISSION_SECRET`: она используется для HMAC-хэшей rate-limit и не должна храниться в репозитории. Endpoint не сохраняет сырые IP и user-agent.
 
 ## 4. Проверить в браузере
 
@@ -66,5 +82,15 @@
 - фильтры и список отчетов работают;
 - в сетевых запросах нет 404 на `vendor/leaflet/leaflet.css` и `vendor/leaflet/leaflet.js`;
 - маркеры появляются на карте.
+- отправка тестового наблюдения возвращает сообщение о премодерации или безопасный fallback-черновик, если PHP недоступен.
+- `api/context.php` возвращает JSON и не раскрывает IP.
+- `faq.html`, `rules.html` и `privacy.html` открываются.
+- `sw.js` доступен и содержит текущий read-only offline-shell.
+
+Та же проверка доступна одной read-only командой:
+
+```powershell
+.\scripts\check-public-lite-live.ps1 -CheckExtendedPages -ExpectedCacheName "whites-public-lite-offline3"
+```
 
 После успешной проверки zip-файл в `public_html` можно удалить, чтобы он не лежал в публичном доступе.

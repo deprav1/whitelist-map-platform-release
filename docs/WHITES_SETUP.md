@@ -1,4 +1,4 @@
-# WhiteS setup
+# Где белые списки? setup
 
 This repository is an Ushahidi Platform Release fork configured for a crowdsourced whitelist map.
 
@@ -28,7 +28,7 @@ Change this password before exposing the site publicly.
 
 ## Bootstrap the whitelist map
 
-After the containers are running and the app responds, create the WhiteS categories and report form:
+After the containers are running and the app responds, create the Где белые списки? categories and report form:
 
 ```powershell
 .\scripts\bootstrap-whitelist.ps1

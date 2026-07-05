@@ -245,4 +245,4 @@ $categoryIdsBySlug = Ensure-Categories -DesiredCategories $categories
 Add-CategoryFieldToSurvey -Survey $survey -CategoryIdsBySlug $categoryIdsBySlug
 Ensure-Survey -Survey $survey
 
-Write-Host "WhiteS bootstrap completed. New public reports will require moderation before publishing."
+Write-Host "Где белые списки? bootstrap completed. New public reports will require moderation before publishing."

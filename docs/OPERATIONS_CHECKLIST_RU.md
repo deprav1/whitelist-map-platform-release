@@ -3,6 +3,12 @@
 ## Утро
 
 - Сайт открывается.
+- Read-only live-check проходит:
+
+```powershell
+.\scripts\run-public-lite-preflight.ps1 -IncludeLiveCheck
+```
+
 - Публичная форма открывается.
 - Админка открывается.
 - Есть свободное место на диске.
@@ -12,11 +18,33 @@
 ## Модерация
 
 - Проверить новые отчеты.
+- Проверить `submissions/observations-pending.jsonl`, если включена легкая форма приема.
 - Удалить персональные данные из комментариев.
 - Отклонить спам.
 - Объединить дубли.
 - Опубликовать полезные свежие отчеты.
+- По жалобам на опасные публикации применять `hide_report` или безопасный `edit_report`.
 - Пометить конфликтующие отчеты как требующие проверки.
+
+Создать шаблон решений по pending-очереди:
+
+```powershell
+.\scripts\export-moderated-observations.ps1 -CreateTemplate
+```
+
+Проверить контур без записи публичных данных:
+
+```powershell
+.\scripts\export-moderated-observations.ps1 -DryRun
+```
+
+После ручного заполнения `data\moderation-decisions.json` применить решения:
+
+```powershell
+.\scripts\export-moderated-observations.ps1
+.\scripts\validate-public-data.ps1 -Path public-lite\reports.json
+.\scripts\audit-public-data-safety.ps1 -Path public-lite\reports.json
+```
 
 ## Данные
 
@@ -35,5 +63,10 @@
 ## Вечер
 
 - Записать итоги в операционный трекер.
-- Сделать backup, если были важные изменения.
+- Сделать backup, если были важные изменения:
+
+```powershell
+.\scripts\backup-public-reports.ps1
+```
+
 - Зафиксировать проблемы на завтра.

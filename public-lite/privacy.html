@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="referrer" content="no-referrer">
+  <title>Приватность - Где белые списки?</title>
+  <meta name="description" content="Короткая политика приватности проекта Где белые списки?">
+  <link rel="stylesheet" href="styles.css?v=20260705-offline3">
+</head>
+<body class="faq-page">
+  <main class="faq-shell">
+    <header class="faq-hero">
+      <a class="text-button" href="index.html">← На карту</a>
+      <p class="eyebrow">Приватность</p>
+      <h1>Минимум данных</h1>
+      <p>Публичная карта показывает только модерированные, обобщенные отметки. Аккаунт, телефон, email и точная геолокация не нужны.</p>
+      <p>
+        <a class="text-button" href="faq.html">FAQ</a>
+        <a class="text-button" href="rules.html">Правила</a>
+      </p>
+    </header>
+
+    <section class="faq-grid" aria-label="Приватность">
+      <article class="faq-card">
+        <h2>Что видно публично</h2>
+        <p>Регион, примерный район, оператор, тип проблемы, проверенные сервисы, время проверки, уверенность и безопасный краткий комментарий.</p>
+      </article>
+      <article class="faq-card">
+        <h2>Что не публикуется</h2>
+        <p>Имена, контакты, точные адреса, точные GPS, аккаунты, IP, user-agent, внутренние заметки модерации и сырые комментарии до проверки.</p>
+      </article>
+      <article class="faq-card">
+        <h2>Pending отдельно</h2>
+        <p>Новые наблюдения попадают в закрытую pending-очередь. Публичная карта читает только безопасный `reports.json` после модерации.</p>
+      </article>
+      <article class="faq-card">
+        <h2>Локальные настройки</h2>
+        <p>“Мои места”, выбранный регион, оператор, кэш публичных данных и режим карты хранятся в браузере и очищаются кнопкой “Очистить”.</p>
+      </article>
+      <article class="faq-card">
+        <h2>IP не геолокация</h2>
+        <p>IP не используется как публичный идентификатор автора и не попадает в `reports.json`. Подсказка региона возможна только если администратор явно настроил ее на сервере.</p>
+      </article>
+      <article class="faq-card">
+        <h2>Offline cache</h2>
+        <p>Service worker кэширует публичную оболочку, FAQ, правила, приватность, локальные Leaflet-ассеты и fallback JSON. `api/`, `submissions/` и POST-запросы не кэшируются.</p>
+      </article>
+    </section>
+
+    <section class="faq-band" aria-label="Опасная публикация">
+      <h2>Если видите риск</h2>
+      <p>Если в опубликованной отметке есть персональные данные, точный адрес или риск для человека, используйте жалобу у карточки. Такая запись должна быть скрыта или отредактирована.</p>
+      <a class="primary-button link-button" href="index.html">Вернуться к карте</a>
+    </section>
+  </main>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    }
+  </script>
+</body>
+</html>

@@ -1,7 +1,13 @@
 const fallbackData = {
   updated_at: "2026-07-02T18:50:00+03:00",
-  source: "WhiteS demo moderated reports",
+  source: "Где белые списки? демо-отметки после модерации",
   disclaimer: "Пользовательские отметки, не официальные данные. Проверяйте свежесть и уровень уверенности.",
+  export_manifest: {
+    schema_version: "1.1",
+    record_count: 4,
+    generated_at: "2026-07-02T18:50:00+03:00",
+    generated_from_moderation_revision: "embedded-demo-20260702-1850"
+  },
   reports: [
     {
       id: "demo-001",
@@ -69,14 +75,21 @@ const fallbackData = {
 const state = {
   data: fallbackData,
   dataUrl: "embedded fallback",
+  dataSource: { mode: "fallback", url: "embedded fallback", savedAt: "", error: "" },
   map: null,
   tileLayer: null,
   markerLayer: null,
   radiusLayer: null,
   markers: new Map(),
+  leafletLoadPromise: null,
   selectedId: null,
   searchDebounceId: null,
   useTiles: true,
+  userContext: defaultUserContext(),
+  userContextSource: "",
+  savedPlaces: [],
+  draftKind: "problem",
+  draftSourceReportId: "",
   filters: defaultFilters()
 };
 
@@ -86,6 +99,14 @@ const categoryMeta = {
   "partial-connectivity": { className: "partial", color: "#c7682d", label: "Частично" },
   restored: { className: "restored", color: "#1f7a55", label: "Восстановлено" },
   "needs-verification": { className: "unknown", color: "#7a8292", label: "Проверка" }
+};
+
+const situationStateMeta = {
+  active: { className: "state-active", label: "Активно", detail: "есть актуальная проблема" },
+  mixed: { className: "state-mixed", label: "Разные отметки", detail: "есть и проблема, и восстановление" },
+  restoring: { className: "state-restoring", label: "Восстанавливается", detail: "есть сигнал восстановления" },
+  restored: { className: "state-restored", label: "Восстановлено", detail: "свежих проблем нет" },
+  stale: { className: "state-stale", label: "Устарело", detail: "нет свежих отметок" }
 };
 
 const categoryWeight = {
@@ -119,6 +140,38 @@ const precisionRadius = {
 const dataSources = ["reports.json", "data/public-reports.json", "reports.sample.json"];
 const cacheKey = "whites:last-public-data";
 const noTilesKey = "whites:no-tiles";
+const userContextKey = "whites:user-context";
+const savedPlacesKey = "whites:saved-places";
+const submissionCooldownKey = "whites:last-observation-submit-at";
+const submissionEndpoint = "api/observations.php";
+const contextEndpoint = "api/context.php";
+const submissionCooldownMs = 45000;
+const leafletConfig = document.getElementById("leafletScriptConfig");
+const leafletScriptUrl = leafletConfig?.dataset.src || "vendor/leaflet/leaflet.js?v=1.9.4";
+
+const draftKindLabels = {
+  problem: "Новое наблюдение",
+  confirm: "Подтверждение проблемы",
+  restored: "Восстановление доступа",
+  complaint: "Жалоба на опубликованную отметку"
+};
+
+const draftKindIntros = {
+  problem: "Если сервер приема доступен, запись уйдет в премодерацию. Черновик всегда остается ниже.",
+  confirm: "Подтверждение уйдет в премодерацию и поможет объединить дубли в счетчик.",
+  restored: "Отметка восстановления уйдет в премодерацию и поможет понять, что ситуация изменилась.",
+  complaint: "Если в отметке есть персональные данные, точный адрес, ошибка или риск для человека, жалоба уйдет модератору."
+};
+
+const complaintReasonLabels = {
+  personal_data: "Персональные данные",
+  exact_location: "Точный адрес или опасная геоточка",
+  dangerous: "Риск для человека",
+  wrong: "Ошибка в отметке",
+  duplicate: "Дубль",
+  outdated: "Устарело",
+  other: "Другое"
+};
 
 const searchAliases = {
   спб: "санкт-петербург питер петербург",
@@ -144,6 +197,29 @@ function defaultFilters() {
     service: "all",
     freshness: "all"
   };
+}
+
+function defaultUserContext() {
+  return {
+    region: "",
+    operator: ""
+  };
+}
+
+function normalizePlace(place) {
+  return {
+    region: String(place?.region || "").trim(),
+    operator: String(place?.operator || "").trim()
+  };
+}
+
+function placeKey(place) {
+  const normalized = normalizePlace(place);
+  return `${normalized.region.toLowerCase()}|${normalized.operator.toLowerCase()}`;
+}
+
+function currentPlace() {
+  return normalizePlace(state.userContext);
 }
 
 function announce(message) {
@@ -177,6 +253,17 @@ function formatTime(value) {
   }).format(new Date(value));
 }
 
+function formatSourceTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
 function freshnessFor(report) {
   const checkedAt = new Date(report.checked_at);
   if (Number.isNaN(checkedAt.getTime())) return report.freshness || "stale";
@@ -187,6 +274,37 @@ function freshnessFor(report) {
   if (ageHours <= 24) return "today";
   if (ageHours <= 168) return "recent";
   return "stale";
+}
+
+function hasRestorationSignal(report) {
+  return (Number(report.restoration_count) || 0) > 0 || Boolean(report.last_restored_at);
+}
+
+function reportSituationState(report) {
+  const freshness = freshnessFor(report);
+  if (freshness === "stale") return "stale";
+  if (report.incident_category === "restored") return "restored";
+  if (hasRestorationSignal(report)) return "restoring";
+  return "active";
+}
+
+function situationStateForReports(reports) {
+  const current = reports.filter((report) => freshnessFor(report) !== "stale");
+  if (!current.length) return "stale";
+
+  const hasActiveReports = current.some((report) => report.incident_category !== "restored");
+  const hasRestoredReports = current.some((report) => report.incident_category === "restored");
+  const hasRestorationSignals = current.some(hasRestorationSignal);
+
+  if (hasActiveReports && hasRestoredReports) return "mixed";
+  if (hasActiveReports && hasRestorationSignals) return "restoring";
+  if (hasActiveReports) return "active";
+  if (hasRestoredReports || hasRestorationSignals) return "restored";
+  return "stale";
+}
+
+function situationStateForReport(report) {
+  return situationStateMeta[reportSituationState(report)] || situationStateMeta.stale;
 }
 
 function normalizeText(value) {
@@ -220,9 +338,11 @@ async function loadData() {
       if (!response.ok) continue;
       state.data = await response.json();
       state.dataUrl = source;
-      localStorage.setItem(cacheKey, JSON.stringify({ data: state.data, dataUrl: source, saved_at: new Date().toISOString() }));
+      state.dataSource = { mode: "network", url: source, savedAt: new Date().toISOString(), error: "" };
+      localStorage.setItem(cacheKey, JSON.stringify({ data: state.data, dataUrl: source, saved_at: state.dataSource.savedAt }));
       return;
-    } catch {
+    } catch (error) {
+      state.dataSource.error = error?.message || "Не удалось загрузить публичный JSON.";
       // Try the next known public export path.
     }
   }
@@ -232,6 +352,7 @@ async function loadData() {
     if (cached?.data?.reports?.length) {
       state.data = cached.data;
       state.dataUrl = `${cached.dataUrl || "cache"} (кэш)`;
+      state.dataSource = { mode: "cache", url: cached.dataUrl || "cache", savedAt: cached.saved_at || "", error: "" };
       return;
     }
   } catch {
@@ -239,6 +360,8 @@ async function loadData() {
   }
 
   state.data = fallbackData;
+  state.dataUrl = "embedded fallback";
+  state.dataSource = { mode: "fallback", url: "embedded fallback", savedAt: "", error: state.dataSource.error || "Публичный JSON и кэш недоступны." };
 }
 
 function fillSelect(element, values, allLabel) {
@@ -254,6 +377,73 @@ function fillSelect(element, values, allLabel) {
     option.textContent = value;
     element.appendChild(option);
   });
+}
+
+function fillContextSelect(element, values, emptyLabel) {
+  element.innerHTML = "";
+  const empty = document.createElement("option");
+  empty.value = "";
+  empty.textContent = emptyLabel;
+  element.appendChild(empty);
+
+  values.forEach((value) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    element.appendChild(option);
+  });
+}
+
+function syncMySituationControls() {
+  const regionSelect = $("#myRegionSelect");
+  const operatorSelect = $("#myOperatorSelect");
+  const hasRegion = [...regionSelect.options].some((option) => option.value === state.userContext.region);
+  const hasOperator = [...operatorSelect.options].some((option) => option.value === state.userContext.operator);
+  if (!hasRegion) state.userContext.region = "";
+  if (!hasOperator) state.userContext.operator = "";
+  regionSelect.value = state.userContext.region;
+  operatorSelect.value = state.userContext.operator;
+}
+
+function refreshMySituation() {
+  syncMySituationControls();
+  updateContextHintText();
+  renderMyPlaces();
+  renderMySituation(publishedReports());
+}
+
+function setupMySituationControls(reports) {
+  fillContextSelect($("#myRegionSelect"), unique(reports.map((report) => report.region)), "Выберите регион");
+  fillContextSelect($("#myOperatorSelect"), unique(reports.map((report) => report.operator)), "Любой оператор");
+  refreshMySituation();
+
+  $("#myRegionSelect").addEventListener("change", (event) => {
+    state.userContext.region = event.target.value;
+    state.userContextSource = state.userContext.region ? "manual" : "";
+    saveUserContext();
+    refreshMySituation();
+  });
+
+  $("#myOperatorSelect").addEventListener("change", (event) => {
+    state.userContext.operator = event.target.value;
+    state.userContextSource = "manual";
+    saveUserContext();
+    refreshMySituation();
+  });
+
+  $("#clearMySituationButton").addEventListener("click", () => {
+    state.userContext = defaultUserContext();
+    state.userContextSource = "";
+    saveUserContext();
+    refreshMySituation();
+    announce("Ваша ситуация сброшена");
+  });
+
+  $("#saveMyPlaceButton").addEventListener("click", saveCurrentPlace);
+  $("#mySituationFilterButton").addEventListener("click", applyMySituationFilter);
+  $("#mySituationReportButton").addEventListener("click", () => openReportDialog(reportsForUserContext()[0] || null, "problem"));
+  $("#mySituationConfirmButton").addEventListener("click", () => openContextualMySituationDraft("confirm"));
+  $("#mySituationRestoredButton").addEventListener("click", () => openContextualMySituationDraft("restored"));
 }
 
 function readFiltersFromUrl() {
@@ -282,6 +472,109 @@ function readRuntimePreferences() {
   state.useTiles = !window.matchMedia("(max-width: 720px)").matches;
 }
 
+function readUserContext() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(userContextKey) || "null");
+    state.userContext = {
+      region: stored?.region || "",
+      operator: stored?.operator || ""
+    };
+    state.userContextSource = state.userContext.region || state.userContext.operator ? "manual" : "";
+  } catch {
+    localStorage.removeItem(userContextKey);
+    state.userContext = defaultUserContext();
+    state.userContextSource = "";
+  }
+
+  try {
+    const storedPlaces = JSON.parse(localStorage.getItem(savedPlacesKey) || "[]");
+    state.savedPlaces = Array.isArray(storedPlaces)
+      ? storedPlaces.map(normalizePlace).filter((place) => place.region || place.operator).slice(0, 5)
+      : [];
+  } catch {
+    localStorage.removeItem(savedPlacesKey);
+    state.savedPlaces = [];
+  }
+}
+
+function saveUserContext() {
+  const hasContext = state.userContext.region || state.userContext.operator;
+  if (!hasContext) {
+    localStorage.removeItem(userContextKey);
+    return;
+  }
+  localStorage.setItem(userContextKey, JSON.stringify(state.userContext));
+}
+
+function saveSavedPlaces() {
+  if (!state.savedPlaces.length) {
+    localStorage.removeItem(savedPlacesKey);
+    return;
+  }
+  localStorage.setItem(savedPlacesKey, JSON.stringify(state.savedPlaces.slice(0, 5)));
+}
+
+function saveCurrentPlace() {
+  const place = currentPlace();
+  if (!place.region && !place.operator) {
+    announce("Сначала выберите регион или оператора");
+    return;
+  }
+
+  const key = placeKey(place);
+  state.savedPlaces = [place, ...state.savedPlaces.filter((item) => placeKey(item) !== key)].slice(0, 5);
+  saveSavedPlaces();
+  renderMyPlaces();
+  announce("Место сохранено в этом браузере");
+}
+
+function applySavedPlace(place) {
+  state.userContext = normalizePlace(place);
+  state.userContextSource = "manual";
+  saveUserContext();
+  refreshMySituation();
+  announce("Место применено");
+}
+
+async function loadContextHint() {
+  if (state.userContext.region) {
+    updateContextHintText();
+    return;
+  }
+
+  try {
+    const response = await fetch(contextEndpoint, { cache: "no-store" });
+    if (!response.ok) throw new Error("context unavailable");
+    const result = await response.json();
+    const hint = String(result?.region_hint || "").trim();
+    const regionSelect = $("#myRegionSelect");
+    const hasHint = hint && [...regionSelect.options].some((option) => option.value === hint);
+    if (result?.ok && hasHint) {
+      state.userContext.region = hint;
+      state.userContextSource = "server_hint";
+      refreshMySituation();
+    }
+  } catch {
+    // Static hosting or unavailable PHP should keep the manual path.
+  }
+
+  updateContextHintText();
+}
+
+function updateContextHintText() {
+  const hint = $("#myContextHint");
+  if (!hint) return;
+
+  if (state.userContextSource === "server_hint") {
+    hint.textContent = "Регион подсказан сервером приблизительно. Его можно изменить вручную.";
+    return;
+  }
+
+  hint.textContent = state.userContext.region
+    ? "Регион выбран вручную и хранится только в этом браузере."
+    : "Выберите регион вручную. IP не используется для публичной идентификации.";
+}
+
 function writeFiltersToUrl() {
   const params = new URLSearchParams();
   Object.entries(state.filters).forEach(([key, value]) => {
@@ -296,6 +589,7 @@ function setupFilters() {
   fillSelect($("#problemFilter"), unique(reports.map((report) => report.problem_type)), "Все проблемы");
   fillSelect($("#operatorFilter"), unique(reports.map((report) => report.operator)), "Все операторы");
   fillSelect($("#serviceFilter"), unique(reports.flatMap((report) => report.checked_services || [])), "Все сервисы");
+  setupMySituationControls(reports);
 
   syncFilterControls();
 
@@ -331,19 +625,46 @@ function setupFilters() {
 
   $("#resetContextButton").addEventListener("click", resetAllFilters);
   $("#shareButton").addEventListener("click", shareCurrentView);
+  $("#copyShareTextButton").addEventListener("click", () => copySharePayload("text"));
+  $("#copyShareUrlButton").addEventListener("click", () => copySharePayload("url"));
+  $("#nativeShareButton").addEventListener("click", sharePreparedView);
   $("#tileModeButton").addEventListener("click", toggleTileMode);
   $("#clearLocalButton").addEventListener("click", clearLocalData);
-  $("#reportButton").addEventListener("click", openReportDialog);
-  $("#drawerReportButton").addEventListener("click", openReportDialog);
-  $("#aboutDataButton").addEventListener("click", () => openDialog($("#aboutDialog")));
+  $("#reportButton").addEventListener("click", () => openReportDialog());
+  $("#drawerReportButton").addEventListener("click", () => openReportDialog());
+  $("#stickyReportButton").addEventListener("click", () => openReportDialog());
+  $("#aboutDataButton").addEventListener("click", () => {
+    setInfoTab("data");
+    openDialog($("#aboutDialog"));
+  });
+  document.querySelectorAll("[data-info-tab]").forEach((button) => {
+    button.addEventListener("click", () => setInfoTab(button.dataset.infoTab));
+  });
   $("#copyDraftButton").addEventListener("click", copyReportDraft);
+  $("#sendDraftButton").addEventListener("click", submitObservation);
   document.querySelectorAll("#reportDraftForm input, #reportDraftForm select, #reportDraftForm textarea").forEach((field) => {
-    field.addEventListener("input", updateDraftOutput);
-    field.addEventListener("change", updateDraftOutput);
+    field.addEventListener("input", () => {
+      updateDraftOutput();
+      updateDraftRiskHint();
+      clearSubmitStatus();
+    });
+    field.addEventListener("change", () => {
+      updateDraftOutput();
+      updateDraftRiskHint();
+      clearSubmitStatus();
+    });
+  });
+  $("#safetyConfirm").addEventListener("change", () => {
+    updateDraftOutput();
+    updateDraftRiskHint();
+    clearSubmitStatus();
   });
 
   $("#showMapTab").addEventListener("click", () => setMobileView("map"));
   $("#showListTab").addEventListener("click", () => setMobileView("list"));
+  $("#openMapFromListButton").addEventListener("click", () => setMobileView("map"));
+  $("#lowBandwidthReportButton").addEventListener("click", () => openReportDialog());
+  $("#lowBandwidthShareButton").addEventListener("click", shareCurrentView);
   updateTileModeButton();
 }
 
@@ -389,16 +710,58 @@ function updateQuickFilters() {
   });
 }
 
-function setMobileView(view) {
+async function setMobileView(view) {
   document.body.classList.toggle("show-map", view === "map");
   document.body.classList.toggle("show-list", view === "list");
   $("#showMapTab").classList.toggle("is-active", view === "map");
   $("#showListTab").classList.toggle("is-active", view === "list");
   $("#showMapTab").setAttribute("aria-selected", String(view === "map"));
   $("#showListTab").setAttribute("aria-selected", String(view === "list"));
-  if (view === "map" && state.map) {
-    setTimeout(() => state.map.invalidateSize(), 40);
+  if (view === "map") {
+    const ready = await ensureMapReady();
+    if (ready) setTimeout(() => state.map.invalidateSize(), 40);
   }
+}
+
+function showReportOnMap(report) {
+  if (!report?.id) return;
+
+  const reveal = () => {
+    if (!report.approx_location || !state.map) {
+      selectReport(report.id, false);
+      announce("У этой отметки нет точки на карте");
+      return;
+    }
+
+    const point = report.approx_location;
+    const latLng = [point.lat, point.lon];
+    const targetZoom = Math.max(state.map.getZoom(), 8);
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    state.selectedId = report.id;
+    document.querySelectorAll(".report-row").forEach((row) => {
+      row.classList.toggle("is-active", row.dataset.reportId === report.id);
+    });
+
+    if (reducedMotion) {
+      state.map.setView(latLng, targetZoom);
+    } else {
+      state.map.flyTo(latLng, targetZoom, { duration: 0.45 });
+    }
+
+    setTimeout(() => {
+      renderMarkers(getFilteredReports());
+      selectReport(report.id, false);
+      announce(`Показано на карте: ${report.city_or_area}, ${report.operator}`);
+    }, reducedMotion ? 80 : 520);
+  };
+
+  if (window.matchMedia("(max-width: 720px)").matches) {
+    setMobileView("map").then(() => setTimeout(reveal, 80));
+    return;
+  }
+
+  ensureMapReady().then(reveal);
 }
 
 function openDialog(dialog) {
@@ -409,14 +772,72 @@ function openDialog(dialog) {
   dialog.setAttribute("open", "");
 }
 
-function openReportDialog() {
-  const reports = getFilteredReports();
-  const latest = reports[0];
-  if (latest) {
-    $("#draftArea").value = latest.city_or_area || latest.region || "";
-    $("#draftOperator").value = latest.operator || "";
+function setInfoTab(tab) {
+  const selected = tab || "data";
+  document.querySelectorAll("[data-info-tab]").forEach((button) => {
+    const isActive = button.dataset.infoTab === selected;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+  document.querySelectorAll("[data-info-page]").forEach((page) => {
+    const isActive = page.dataset.infoPage === selected;
+    page.classList.toggle("is-active", isActive);
+    page.hidden = !isActive;
+  });
+}
+
+function setSelectValue(selector, value) {
+  const element = $(selector);
+  if ([...element.options].some((option) => option.value === value)) {
+    element.value = value;
   }
+}
+
+function complaintReasonLabel(value) {
+  return complaintReasonLabels[value] || value || "не указано";
+}
+
+function draftSummaryFor(kind, report) {
+  if (kind === "confirm" && report) {
+    return `Подтверждаю похожую ситуацию по отметке ${report.id}.`;
+  }
+  if (kind === "restored" && report) {
+    return `По отметке ${report.id}: доступ восстановился или ситуация стала лучше.`;
+  }
+  if (kind === "complaint" && report) {
+    return `Проверьте опубликованную отметку ${report.id}: возможно, ее нужно скрыть или отредактировать.`;
+  }
+  return "";
+}
+
+function openReportDialog(report = null, kind = "problem") {
+  const latest = report || reportsForUserContext()[0] || getFilteredReports()[0] || null;
+  state.draftKind = kind;
+  state.draftSourceReportId = latest?.id || "";
+
+  const isComplaint = kind === "complaint";
+  $("#draftComplaintReasonWrap").hidden = !isComplaint;
+  $("#draftComplaintReason").value = "personal_data";
+  $("#reportDialogTitle").textContent = draftKindLabels[kind] || draftKindLabels.problem;
+  $("#reportDialogIntro").textContent = draftKindIntros[kind] || draftKindIntros.problem;
+  $("#draftWebsite").value = "";
+  $("#draftArea").value = latest?.city_or_area || latest?.region || state.userContext.region || "";
+  $("#draftOperator").value = latest?.operator || state.userContext.operator || "";
+  $("#draftServices").value = latest?.checked_services?.join(", ") || "";
+  $("#draftSummary").value = draftSummaryFor(kind, latest);
+  $("#safetyConfirm").checked = false;
+
+  if (latest?.network_type) setSelectValue("#draftNetwork", latest.network_type);
+  if (kind === "restored") {
+    setSelectValue("#draftProblem", "Доступ восстановился");
+  } else if (latest?.problem_type) {
+    setSelectValue("#draftProblem", latest.problem_type);
+  }
+
   updateDraftOutput();
+  updateDraftRiskHint();
+  clearSubmitStatus();
+  resetSendButton();
   openDialog($("#reportDialog"));
 }
 
@@ -427,9 +848,13 @@ function draftValue(selector) {
 function updateDraftOutput() {
   const checkedAt = new Date().toLocaleString("ru-RU");
   const summary = draftValue("#draftSummary");
+  const complaintReason = state.draftKind === "complaint" ? complaintReasonLabel($("#draftComplaintReason").value) : "";
   $("#draftSummaryCounter").textContent = `${summary.length} / 500`;
   const lines = [
-    "WhiteS: черновик наблюдения",
+    "Где белые списки?: черновик наблюдения",
+    `Тип: ${draftKindLabels[state.draftKind] || draftKindLabels.problem}`,
+    state.draftSourceReportId ? `Связано с отметкой: ${state.draftSourceReportId}` : "",
+    complaintReason ? `Причина жалобы: ${complaintReason}` : "",
     `Место: ${draftValue("#draftArea") || "не указано"}`,
     `Оператор: ${draftValue("#draftOperator") || "не указано"}`,
     `Тип сети: ${$("#draftNetwork").value}`,
@@ -439,9 +864,34 @@ function updateDraftOutput() {
     `Уверенность: ${$("#draftConfidence").value}`,
     `Комментарий: ${summary || "нет"}`,
     "",
-    "Без ФИО, телефона, точного адреса, аккаунтов и скриншотов с личными данными."
-  ];
+    "Без ФИО, телефона, email, точного адреса, GPS, аккаунтов, приватных ссылок и VPN/proxy-инструкций.",
+    $("#safetyConfirm").checked ? "Safety-проверка: подтверждена." : "Safety-проверка: не подтверждена."
+  ].filter((line) => line !== "");
   $("#draftOutput").value = lines.join("\n");
+}
+
+function updateDraftRiskHint() {
+  const payload = buildObservationPayload();
+  const scan = [
+    payload.city_or_area,
+    payload.operator,
+    payload.network_type,
+    payload.problem_type,
+    payload.confidence,
+    payload.summary,
+    ...payload.checked_services
+  ].join(" ");
+  const findings = riskyContentFindings(scan);
+  const hint = $("#draftRiskHint");
+
+  if (!findings.length) {
+    hint.textContent = "Комментарий выглядит безопасно для премодерации, если в нем нет личных деталей.";
+    hint.className = "risk-hint is-ok";
+    return;
+  }
+
+  hint.textContent = `Перед отправкой уберите или обобщите: ${findings.join(", ")}. Жалобу можно описать без повторения опасных данных.`;
+  hint.className = "risk-hint is-warning";
 }
 
 async function copyReportDraft() {
@@ -455,8 +905,154 @@ async function copyReportDraft() {
     announce("Не удалось скопировать автоматически");
   }
   setTimeout(() => {
-    $("#copyDraftButton").textContent = "Скопировать черновик";
+    $("#copyDraftButton").textContent = "Скопировать безопасный черновик";
   }, 1400);
+}
+
+function resetSendButton() {
+  const button = $("#sendDraftButton");
+  button.disabled = false;
+  button.textContent = "Отправить на модерацию";
+}
+
+function setSubmitStatus(message, type = "success") {
+  const status = $("#submitStatus");
+  status.textContent = message;
+  status.className = `submit-status is-visible ${type === "error" ? "is-error" : "is-success"}`;
+  announce(message);
+}
+
+function clearSubmitStatus() {
+  const status = $("#submitStatus");
+  status.textContent = "";
+  status.className = "submit-status";
+}
+
+function sourceReportForDraft() {
+  if (!state.draftSourceReportId) return null;
+  return publishedReports().find((report) => report.id === state.draftSourceReportId) || null;
+}
+
+function splitServices(value) {
+  return value
+    .split(/[,;]+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
+function buildObservationPayload() {
+  const source = sourceReportForDraft();
+  return {
+    schema_version: 1,
+    kind: state.draftKind,
+    source_report_id: state.draftSourceReportId || "",
+    region: source?.region || state.userContext.region || "",
+    city_or_area: draftValue("#draftArea"),
+    operator: draftValue("#draftOperator"),
+    network_type: $("#draftNetwork").value,
+    problem_type: $("#draftProblem").value,
+    checked_services: splitServices(draftValue("#draftServices")),
+    checked_at: new Date().toISOString(),
+    confidence: $("#draftConfidence").value,
+    complaint_reason: state.draftKind === "complaint" ? $("#draftComplaintReason").value : "",
+    summary: draftValue("#draftSummary"),
+    safety_confirm: $("#safetyConfirm").checked,
+    website: draftValue("#draftWebsite")
+  };
+}
+
+function riskyContentFindings(value) {
+  const text = String(value || "");
+  const findings = [];
+  if (/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(text)) findings.push("email");
+  if (/\+?\d[\d\s\-()]{7,}\d/.test(text)) findings.push("телефон");
+  if (/\b(?:\d{1,3}\.){3}\d{1,3}\b/.test(text)) findings.push("IP");
+  if (/\b\d{1,2}[.,]\d{4,}\s*[,; ]\s*\d{1,3}[.,]\d{4,}\b/.test(text)) findings.push("точные координаты");
+  if (/https?:\/\/|www\.|t\.me\/|vk\.com\/|instagram\.com\/|facebook\.com\//i.test(text)) findings.push("ссылка");
+  if (/\b(ул\.?|улица|проспект|пр-т|дом|д\.|квартира|кв\.|подъезд|этаж)\b/iu.test(text)) findings.push("точный адрес");
+  if (/\b(vpn|proxy|прокси|wireguard|openvpn|outline|ключ|конфиг|config|wg:\/\/|ss:\/\/|vless:\/\/|trojan:\/\/)\b/iu.test(text)) findings.push("VPN/proxy или ключ");
+  if (/\b(user-agent|mozilla\/5\.0|curl\/|okhttp|python-requests)\b/iu.test(text)) findings.push("служебная строка устройства");
+  return unique(findings);
+}
+
+function containsPrivateData(value) {
+  return riskyContentFindings(value).length > 0;
+}
+
+function validateObservationPayload(payload) {
+  if (!payload.safety_confirm) {
+    return "Подтвердите safety-проверку: без личных данных, точного адреса, GPS, приватных ссылок и опасных инструкций.";
+  }
+  if (!payload.city_or_area) return "Укажите город или район без точного адреса.";
+  if (!payload.operator) return "Укажите оператора или напишите \"не знаю\".";
+  if (payload.kind === "complaint" && !payload.source_report_id) return "Жалоба должна быть связана с опубликованной отметкой.";
+  if (payload.kind === "complaint" && !payload.complaint_reason) return "Выберите причину жалобы.";
+  if (payload.summary.length > 500) return "Комментарий слишком длинный.";
+
+  const privateScan = [
+    payload.region,
+    payload.city_or_area,
+    payload.operator,
+    payload.network_type,
+    payload.problem_type,
+    payload.confidence,
+    payload.summary,
+    ...payload.checked_services
+  ].join(" ");
+  const findings = riskyContentFindings(privateScan);
+  if (findings.length) {
+    return `Перед отправкой уберите: ${findings.join(", ")}. Если это жалоба на опасную отметку, опишите риск без повторения личных данных.`;
+  }
+  return "";
+}
+
+function fallbackSubmissionMessage() {
+  return "Сервер приема сейчас недоступен. Черновик сохранен ниже: его можно скопировать и отправить модератору вручную.";
+}
+
+async function submitObservation() {
+  updateDraftOutput();
+  const payload = buildObservationPayload();
+  const validationError = validateObservationPayload(payload);
+  if (validationError) {
+    setSubmitStatus(validationError, "error");
+    return;
+  }
+
+  const lastSubmitAt = Number(localStorage.getItem(submissionCooldownKey) || 0);
+  const waitMs = submissionCooldownMs - (Date.now() - lastSubmitAt);
+  if (waitMs > 0) {
+    setSubmitStatus(`Подождите ${Math.ceil(waitMs / 1000)} сек. перед повторной отправкой.`, "error");
+    return;
+  }
+
+  const button = $("#sendDraftButton");
+  button.disabled = true;
+  button.textContent = "Отправка...";
+
+  try {
+    const response = await fetch(submissionEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok || !result?.ok) {
+      throw new Error(result?.message || fallbackSubmissionMessage());
+    }
+
+    localStorage.setItem(submissionCooldownKey, String(Date.now()));
+    button.textContent = "Принято";
+    setSubmitStatus(result.message || "Наблюдение принято на модерацию.", "success");
+  } catch (error) {
+    button.textContent = "Не отправлено";
+    setSubmitStatus(error?.message || fallbackSubmissionMessage(), "error");
+  } finally {
+    setTimeout(resetSendButton, 1600);
+  }
 }
 
 function updateTileModeButton() {
@@ -480,11 +1076,19 @@ function toggleTileMode() {
     }
     $("#tileWarning").hidden = false;
   }
+  renderLowBandwidthPanel();
 }
 
 function clearLocalData() {
   localStorage.removeItem(cacheKey);
   localStorage.removeItem(noTilesKey);
+  localStorage.removeItem(userContextKey);
+  localStorage.removeItem(savedPlacesKey);
+  localStorage.removeItem(submissionCooldownKey);
+  state.userContext = defaultUserContext();
+  state.userContextSource = "";
+  state.savedPlaces = [];
+  refreshMySituation();
   $("#clearLocalButton").textContent = "Очищено";
   announce("Локальный кэш очищен");
   setTimeout(() => {
@@ -492,7 +1096,45 @@ function clearLocalData() {
   }, 1400);
 }
 
+function loadLeafletScript() {
+  if (window.L) return Promise.resolve(true);
+  if (state.leafletLoadPromise) return state.leafletLoadPromise;
+
+  state.leafletLoadPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = leafletScriptUrl;
+    script.async = true;
+    script.onload = () => resolve(Boolean(window.L));
+    script.onerror = () => reject(new Error("Leaflet script failed to load"));
+    document.body.appendChild(script);
+  }).catch(() => {
+    state.leafletLoadPromise = null;
+    $("#tileWarning").hidden = false;
+    renderLowBandwidthPanel();
+    return false;
+  });
+
+  return state.leafletLoadPromise;
+}
+
+async function ensureMapReady(options = {}) {
+  if (state.map) return true;
+
+  const loaded = await loadLeafletScript();
+  if (!loaded || !window.L) {
+    $("#tileWarning").hidden = false;
+    renderLowBandwidthPanel();
+    return false;
+  }
+
+  setupMap();
+  renderMarkers(getFilteredReports());
+  fitMap(getFilteredReports(), Boolean(options.forceFit));
+  return Boolean(state.map);
+}
+
 function setupMap() {
+  if (state.map) return;
   if (!window.L) {
     $("#tileWarning").hidden = false;
     return;
@@ -518,6 +1160,7 @@ function setupMap() {
   } else {
     $("#tileWarning").hidden = false;
   }
+  renderLowBandwidthPanel();
 
   state.radiusLayer = L.layerGroup().addTo(state.map);
   state.markerLayer = L.layerGroup().addTo(state.map);
@@ -537,6 +1180,7 @@ function addTileLayer() {
     if (tileErrorShown) return;
     tileErrorShown = true;
     $("#tileWarning").hidden = false;
+    renderLowBandwidthPanel();
   });
 
   tiles.addTo(state.map);
@@ -574,11 +1218,22 @@ function getFilteredReports() {
 
 function popupHtml(report) {
   const category = categoryFor(report);
+  const stateMeta = situationStateForReport(report);
   const confirmationText = report.confirmation_count ? `${report.confirmation_count} подтвержд.` : "";
+  const restorationText = report.restoration_count ? `${report.restoration_count} восстановл.` : "";
   const precisionText = report.approx_location?.precision ? `точность: ${report.approx_location.precision}` : "";
-  const tags = [category.label, freshnessLabels[freshnessFor(report)], report.confidence, confirmationText, precisionText, ...(report.checked_services || []).slice(0, 4)]
-    .filter(Boolean)
-    .map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`)
+  const tags = [
+    { value: stateMeta.label, className: `strong ${stateMeta.className}` },
+    { value: category.label },
+    { value: freshnessLabels[freshnessFor(report)] },
+    { value: report.confidence },
+    { value: confirmationText },
+    { value: restorationText },
+    { value: precisionText },
+    ...(report.checked_services || []).slice(0, 4).map((value) => ({ value }))
+  ]
+    .filter((tag) => tag.value)
+    .map((tag) => `<span class="tag ${tag.className || ""}">${escapeHtml(tag.value)}</span>`)
     .join("");
 
   return `
@@ -722,16 +1377,79 @@ function fitMap(reports, force) {
 }
 
 function renderSummary(reports) {
+  const incidents = incidentGroups(reports);
+  const activeIncidents = incidents.filter((incident) => ["active", "mixed", "restoring"].includes(incident.state)).length;
+  const restored = restorationCount(reports);
+  const fresh = reports.filter((report) => ["now", "today"].includes(freshnessFor(report))).length;
+  const topIncident = incidents[0] || null;
+
+  $("#activeIncidentCount").textContent = activeIncidents;
   $("#totalCount").textContent = reports.length;
-  $("#freshCount").textContent = reports.filter((report) => ["now", "today"].includes(freshnessFor(report))).length;
-  $("#regionsCount").textContent = unique(reports.map((report) => report.region)).length;
-  $("#shutdownCount").textContent = reports.filter((report) =>
-    ["internet-shutdown", "whitelist-only", "partial-connectivity"].includes(report.incident_category)
-  ).length;
+  $("#freshCount").textContent = fresh;
+  $("#restoredCount").textContent = restored;
   $("#updatedAt").textContent = `обновлено ${formatTime(state.data.updated_at)}`;
+  $("#summaryHeadline").textContent = activeIncidents
+    ? `Сейчас заметно: ${activeIncidents} ${pluralRu(activeIncidents, ["инцидент", "инцидента", "инцидентов"])}`
+    : "Сейчас нет свежих активных инцидентов";
+  $("#summaryLede").textContent = topIncident
+    ? `${topIncident.city_or_area}, ${topIncident.operator}: ${topIncident.stateMeta.detail}. Последняя проверка ${formatTime(topIncident.latest.checked_at)}.`
+    : "Нет свежих опубликованных проблем. Это не значит, что проблемы нет: новых отметок могло еще не быть.";
+
   const isDemo = state.data.source?.toLocaleLowerCase("ru").includes("demo") || state.dataUrl.includes("sample");
-  $("#dataBadge").textContent = isDemo ? "демо-данные" : "живые данные";
+  const badge = $("#dataBadge");
+  badge.classList.remove("is-live", "is-demo", "is-cache", "is-fallback");
+  const statePanel = $("#dataStatePanel");
+  const actions = $("#dataStateActions");
+  actions.innerHTML = "";
+  statePanel.classList.remove("is-cache", "is-fallback", "is-live", "is-demo");
+
+  const addStateAction = (label, handler, className = "ghost-button") => {
+    const button = document.createElement("button");
+    button.className = className;
+    button.type = "button";
+    button.textContent = label;
+    button.addEventListener("click", handler);
+    actions.appendChild(button);
+  };
+
+  if (state.dataSource.mode === "cache") {
+    const savedAt = formatSourceTime(state.dataSource.savedAt);
+    badge.textContent = "данные из кэша";
+    badge.classList.add("is-cache");
+    statePanel.classList.add("is-cache");
+    badge.title = savedAt ? `Последняя сохраненная копия: ${savedAt}` : "Показана последняя сохраненная копия";
+    badge.setAttribute("aria-label", badge.title);
+    $("#dataStateTitle").textContent = "Показываем последнюю сохраненную копию";
+    $("#sourceNote").textContent = `Показана последняя сохраненная копия${savedAt ? ` от ${savedAt}` : ""}. Источник: ${state.data.source || state.dataSource.url}. Публично показываются только опубликованные модерацией записи.`;
+    addStateAction("Обновить", () => window.location.reload());
+    addStateAction("Очистить кэш", clearLocalData);
+    return;
+  }
+
+  if (state.dataSource.mode === "fallback") {
+    badge.textContent = "резервные данные";
+    badge.classList.add("is-fallback");
+    statePanel.classList.add("is-fallback");
+    badge.title = "Не удалось загрузить публичный JSON, показан встроенный резервный набор.";
+    badge.setAttribute("aria-label", badge.title);
+    $("#dataStateTitle").textContent = "Показан резервный набор";
+    $("#sourceNote").textContent = "Показан встроенный резервный набор, потому что публичный JSON и кэш недоступны. Публично показываются только безопасные демонстрационные записи.";
+    addStateAction("Попробовать снова", () => window.location.reload());
+    addStateAction("Сообщить наблюдение", () => openReportDialog(), "primary-button");
+    return;
+  }
+
+  badge.textContent = isDemo ? "демо-данные" : "живые данные";
+  badge.classList.add(isDemo ? "is-demo" : "is-live");
+  statePanel.classList.add(isDemo ? "is-demo" : "is-live");
+  badge.title = isDemo ? "Показаны демонстрационные модерированные записи." : "Показана свежая загрузка публичного JSON.";
+  badge.setAttribute("aria-label", badge.title);
+  $("#dataStateTitle").textContent = isDemo ? "Демо-данные после модерации" : "Свежая загрузка публичного JSON";
   $("#sourceNote").textContent = `Источник: ${state.data.source || state.dataUrl}. Публично показываются только опубликованные модерацией записи.`;
+  if (isDemo) addStateAction("О данных", () => {
+    setInfoTab("data");
+    openDialog($("#aboutDialog"));
+  });
 }
 
 function pluralRu(value, forms) {
@@ -749,6 +1467,257 @@ function reportCountLabel(value) {
 
 function freshCountLabel(value) {
   return `${value} ${pluralRu(value, ["свежая", "свежие", "свежих"])}`;
+}
+
+function renderMyPlaces() {
+  const container = $("#myPlacesList");
+  if (!container) return;
+
+  container.innerHTML = "";
+  const activeKey = placeKey(currentPlace());
+  state.savedPlaces.forEach((place) => {
+    const label = [place.region || "Все регионы", place.operator || "любой оператор"].join(" · ");
+    const button = document.createElement("button");
+    button.className = "my-place-chip";
+    button.type = "button";
+    button.textContent = label;
+    button.classList.toggle("is-active", placeKey(place) === activeKey);
+    button.setAttribute("aria-label", `Показать сохраненное место: ${label}`);
+    button.addEventListener("click", () => applySavedPlace(place));
+    container.appendChild(button);
+  });
+}
+
+function reportsForUserContext() {
+  const { region, operator } = state.userContext;
+  if (!region && !operator) return [];
+
+  return publishedReports().filter((report) => {
+    if (region && report.region !== region) return false;
+    if (operator && report.operator !== operator) return false;
+    return true;
+  });
+}
+
+function restorationCount(reports) {
+  return reports.reduce((sum, report) => {
+    const explicitCount = Number(report.restoration_count) || 0;
+    return sum + explicitCount + (report.incident_category === "restored" && !explicitCount ? 1 : 0);
+  }, 0);
+}
+
+function confirmationCount(reports) {
+  return reports.reduce((sum, report) => sum + (Number(report.confirmation_count) || 0), 0);
+}
+
+function situationSummary(reports) {
+  const state = situationStateForReports(reports);
+  const meta = situationStateMeta[state] || situationStateMeta.stale;
+  const active = reports.filter((report) => report.incident_category !== "restored" && freshnessFor(report) !== "stale");
+  const category = active.length ? worstCategory(active) : (state === "restored" ? "restored" : "needs-verification");
+  const categoryLabel = categoryMeta[category]?.label || "Проверка";
+  const detail = state === "active" ? categoryLabel.toLocaleLowerCase("ru") : meta.detail;
+
+  return { state, meta, category, detail };
+}
+
+function applyMySituationFilter() {
+  const { region, operator } = state.userContext;
+  if (!region && !operator) {
+    announce("Сначала выберите регион или оператора");
+    return;
+  }
+
+  state.filters.search = region || "";
+  state.filters.operator = operator || "all";
+  syncFilterControls();
+  render({ fit: true });
+  announce("Показаны отметки по вашей ситуации");
+}
+
+function latestMySituationReport() {
+  return reportsForUserContext()[0] || null;
+}
+
+function openContextualMySituationDraft(kind) {
+  const latest = latestMySituationReport();
+  openReportDialog(latest, latest ? kind : "problem");
+  if (!latest) {
+    announce("Нет опубликованной отметки для подтверждения. Можно отправить новое наблюдение.");
+  }
+}
+
+function renderMySituation() {
+  const container = $("#mySituationCard");
+  const { region, operator } = state.userContext;
+
+  if (!region && !operator) {
+    container.innerHTML = `
+      <p class="situation-empty">Выберите регион и оператора: сводка останется только в этом браузере.</p>
+      <p class="situation-footnote">Без аккаунта, телефона, email и точной геолокации.</p>
+    `;
+    return;
+  }
+
+  const reports = reportsForUserContext();
+  const title = [region || "Все регионы", operator || "любой оператор"].join(" · ");
+
+  if (!reports.length) {
+    container.innerHTML = `
+      <div class="situation-status">
+        <span class="situation-title">${escapeHtml(title)}</span>
+        <span class="status-badge state-stale">Нет данных</span>
+      </div>
+      <p class="situation-empty">Нет опубликованных отметок. Это не значит, что проблемы нет: новых данных могло еще не быть.</p>
+      <p class="situation-footnote">Можно сообщить наблюдение, оно появится публично только после модерации.</p>
+    `;
+    return;
+  }
+
+  const summary = situationSummary(reports);
+  const fresh = reports.filter((report) => ["now", "today"].includes(freshnessFor(report))).length;
+  const last = sortedReports(reports)[0];
+  const stateLine = `${summary.meta.label}: ${summary.detail}`;
+  container.innerHTML = `
+    <div class="situation-status">
+      <span class="situation-title">${escapeHtml(title)}</span>
+      <span class="status-badge ${summary.meta.className}">${escapeHtml(summary.meta.label)}</span>
+    </div>
+    <p class="situation-answer">${escapeHtml(stateLine)}</p>
+    <div class="situation-metrics" aria-label="Сводка по выбранной ситуации">
+      <span><strong>${fresh}</strong> свежих</span>
+      <span><strong>${confirmationCount(reports)}</strong> подтвержд.</span>
+      <span><strong>${restorationCount(reports)}</strong> восстановл.</span>
+    </div>
+    <p class="situation-footnote">Последняя проверка: ${escapeHtml(formatTime(last.checked_at))}. Точки примерные, авторы не публикуются.</p>
+  `;
+}
+
+function incidentKeyFor(report) {
+  return [report.region, report.city_or_area, report.operator, report.network_type]
+    .map((value) => normalizeText(value) || "unknown")
+    .join("|");
+}
+
+function incidentCategoryFor(reports) {
+  const active = reports.filter((report) => report.incident_category !== "restored" && freshnessFor(report) !== "stale");
+  return active.length ? worstCategory(active) : worstCategory(reports);
+}
+
+function incidentGroups(reports) {
+  const groups = new Map();
+
+  reports.forEach((report) => {
+    const key = incidentKeyFor(report);
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        region: report.region || "Регион не указан",
+        city_or_area: report.city_or_area || "Место не указано",
+        operator: report.operator || "Оператор не указан",
+        network_type: report.network_type || "Сеть не указана",
+        reports: [],
+        problemTypes: new Set(),
+        services: new Set()
+      });
+    }
+
+    const group = groups.get(key);
+    group.reports.push(report);
+    if (report.problem_type) group.problemTypes.add(report.problem_type);
+    (report.checked_services || []).forEach((service) => group.services.add(service));
+  });
+
+  return [...groups.values()].map((group) => {
+    const reportsSorted = sortedReports(group.reports);
+    const latest = reportsSorted[0];
+    const state = situationStateForReports(group.reports);
+    const stateMeta = situationStateMeta[state] || situationStateMeta.stale;
+    const categoryKey = incidentCategoryFor(group.reports);
+    const category = categoryMeta[categoryKey] || categoryMeta["needs-verification"];
+    const fresh = group.reports.filter((report) => ["now", "today"].includes(freshnessFor(report))).length;
+    const latestTime = new Date(latest?.checked_at || 0).getTime() || 0;
+    const stateWeight = { active: 4, mixed: 4, restoring: 3, restored: 2, stale: 1 }[state] || 0;
+    const score = stateWeight * 20 + (categoryWeight[categoryKey] || 0) * 4 + fresh * 3 + group.reports.length;
+
+    return {
+      ...group,
+      reports: reportsSorted,
+      latest,
+      latestTime,
+      state,
+      stateMeta,
+      category,
+      fresh,
+      score,
+      confirmationTotal: confirmationCount(group.reports),
+      restorationTotal: restorationCount(group.reports),
+      problemLabels: unique([...group.problemTypes]),
+      serviceLabels: unique([...group.services])
+    };
+  }).sort((a, b) => b.score - a.score || b.latestTime - a.latestTime || a.city_or_area.localeCompare(b.city_or_area, "ru"));
+}
+
+function applyIncidentFilter(incident) {
+  state.filters.search = incident.city_or_area || incident.region;
+  state.filters.operator = incident.operator || "all";
+  state.filters.problem = incident.problemLabels.length === 1 ? incident.problemLabels[0] : "all";
+  state.selectedId = incident.latest?.id || null;
+  syncFilterControls();
+  render({ fit: true });
+  if (state.selectedId) selectReport(state.selectedId, false);
+  announce(`Показан инцидент: ${incident.city_or_area}, ${incident.operator}`);
+}
+
+function renderIncidents(reports) {
+  const container = $("#incidentRollups");
+  container.innerHTML = "";
+
+  const incidents = incidentGroups(reports).slice(0, 5);
+  if (!incidents.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = "По текущим фильтрам нет сгруппированных инцидентов.";
+    container.appendChild(empty);
+    return;
+  }
+
+  incidents.forEach((incident) => {
+    const button = document.createElement("button");
+    button.className = "incident-card";
+    button.type = "button";
+    button.classList.toggle("is-active", state.selectedId && incident.reports.some((report) => report.id === state.selectedId));
+    button.setAttribute("aria-label", `Показать инцидент ${incident.city_or_area}, ${incident.operator}`);
+
+    const main = document.createElement("span");
+    main.className = "incident-main";
+
+    const title = document.createElement("strong");
+    title.textContent = `${incident.city_or_area}, ${incident.operator}`;
+    const meta = document.createElement("span");
+    meta.textContent = `${incident.region} · ${incident.network_type} · ${reportCountLabel(incident.reports.length)}`;
+    const problems = document.createElement("span");
+    problems.className = "incident-problems";
+    problems.textContent = incident.problemLabels.slice(0, 2).join(" · ") || incident.category.label;
+    main.append(title, meta, problems);
+
+    const side = document.createElement("span");
+    side.className = "incident-side";
+    const badge = document.createElement("span");
+    badge.className = `status-badge ${incident.stateMeta.className}`;
+    badge.textContent = incident.stateMeta.label;
+    const time = document.createElement("small");
+    time.textContent = formatTime(incident.latest.checked_at);
+    side.append(badge, time);
+
+    const metrics = document.createElement("span");
+    metrics.className = "incident-metrics";
+    metrics.textContent = `${freshCountLabel(incident.fresh)} · ${incident.confirmationTotal} подтвержд. · ${incident.restorationTotal} восстановл.`;
+
+    button.append(main, side, metrics);
+    button.addEventListener("click", () => applyIncidentFilter(incident));
+    container.appendChild(button);
+  });
 }
 
 function regionHotspots(reports) {
@@ -897,8 +1866,9 @@ function filterLabels() {
 
 function renderActiveFilters() {
   const container = $("#activeFilters");
+  const reportButton = $("#stickyReportButton");
   const labels = filterLabels();
-  container.innerHTML = "";
+  container.querySelectorAll(".filter-chip, .filter-reset-chip").forEach((chip) => chip.remove());
   container.classList.toggle("has-filters", labels.length > 0);
   labels.forEach((item) => {
     const chip = document.createElement("button");
@@ -914,26 +1884,62 @@ function renderActiveFilters() {
     chip.appendChild(remove);
 
     chip.addEventListener("click", () => clearFilter(item.key));
-    container.appendChild(chip);
+    container.insertBefore(chip, reportButton);
   });
+
+  if (labels.length > 1) {
+    const reset = document.createElement("button");
+    reset.className = "filter-chip filter-reset-chip";
+    reset.type = "button";
+    reset.textContent = "сбросить все";
+    reset.setAttribute("aria-label", "Сбросить все активные фильтры");
+    reset.addEventListener("click", resetAllFilters);
+    container.insertBefore(reset, reportButton);
+  }
 }
 
 function renderList(reports) {
   const list = $("#reportsList");
   const template = $("#reportTemplate");
   list.innerHTML = "";
+  renderLowBandwidthPanel();
 
   if (!reports.length) {
     const empty = document.createElement("div");
     empty.className = "empty-state";
+    const title = document.createElement("strong");
+    title.textContent = publishedReports().length ? "По фильтрам ничего не найдено" : "Пока нет опубликованных отметок";
     const text = document.createElement("p");
-    text.textContent = "По выбранным фильтрам пока нет опубликованных отметок.";
+    text.textContent = publishedReports().length
+      ? "Сбросьте фильтры или отправьте новое наблюдение. Отсутствие совпадений не подтверждает, что проблемы нет."
+      : "Публичный список пуст. Это не значит, что проблемы нет: отметки могли еще не пройти модерацию.";
     const reset = document.createElement("button");
     reset.className = "ghost-button";
     reset.type = "button";
     reset.textContent = "Сбросить фильтры";
+    reset.hidden = !publishedReports().length;
     reset.addEventListener("click", () => $("#resetFiltersButton").click());
-    empty.append(text, reset);
+    const report = document.createElement("button");
+    report.className = "primary-button";
+    report.type = "button";
+    report.textContent = "Сообщить наблюдение";
+    report.addEventListener("click", () => openReportDialog());
+
+    const about = document.createElement("button");
+    about.className = "ghost-button";
+    about.type = "button";
+    about.textContent = "Как читать данные";
+    about.addEventListener("click", () => {
+      setInfoTab("data");
+      openDialog($("#aboutDialog"));
+    });
+
+    const actions = document.createElement("div");
+    actions.className = "empty-actions";
+    actions.append(report, about);
+    if (publishedReports().length) actions.prepend(reset);
+
+    empty.append(title, text, actions);
     list.appendChild(empty);
     return;
   }
@@ -942,15 +1948,18 @@ function renderList(reports) {
     const node = template.content.cloneNode(true);
     const row = node.querySelector(".report-row");
     const category = categoryFor(report);
+    const stateMeta = situationStateForReport(report);
     const confirmationText = report.confirmation_count ? `${report.confirmation_count} подтвержд.` : "";
-    const tags = [category.label, freshnessLabels[freshnessFor(report)], report.confidence, confirmationText, ...(report.checked_services || []).slice(0, 3)].filter(Boolean);
+    const restorationText = report.restoration_count ? `${report.restoration_count} восстановл.` : "";
+    const tags = [category.label, freshnessLabels[freshnessFor(report)], report.confidence, confirmationText, restorationText, ...(report.checked_services || []).slice(0, 3)].filter(Boolean);
 
     row.dataset.reportId = report.id;
     row.classList.toggle("is-active", report.id === state.selectedId);
     row.querySelector(".row-status").classList.add(category.className);
     row.querySelector(".row-status").setAttribute("aria-label", category.label);
     row.querySelector(".row-title").textContent = `${report.city_or_area}, ${report.operator}`;
-    row.querySelector(".row-status-label").textContent = category.label;
+    row.querySelector(".row-status-label").classList.add(stateMeta.className);
+    row.querySelector(".row-status-label").textContent = stateMeta.label;
     row.querySelector(".row-meta").textContent = `${report.region} · ${report.network_type} · ${formatTime(report.checked_at)} · ${freshnessLabels[freshnessFor(report)]}`;
     row.querySelector(".row-summary").textContent = report.summary;
 
@@ -959,13 +1968,35 @@ function renderList(reports) {
       const tag = document.createElement("span");
       tag.className = "tag";
       if (String(value).includes("подтвержд")) tag.classList.add("strong");
+      if (String(value).includes("восстановл")) tag.classList.add("strong", "state-restored");
       tag.textContent = value;
       tagWrap.appendChild(tag);
     });
 
     row.addEventListener("click", () => selectReport(report.id, true));
+    node.querySelectorAll(".report-action").forEach((button) => {
+      const action = button.dataset.action || "problem";
+      if (action === "map") {
+        button.hidden = !report.approx_location;
+        button.setAttribute("aria-label", `Показать на карте ${report.city_or_area}, ${report.operator}`);
+      }
+
+      button.addEventListener("click", () => {
+        if (action === "map") {
+          showReportOnMap(report);
+          return;
+        }
+        openReportDialog(report, action);
+      });
+    });
     list.appendChild(node);
   });
+}
+
+function renderLowBandwidthPanel() {
+  const panel = $("#lowBandwidthPanel");
+  if (!panel) return;
+  panel.classList.toggle("is-no-tiles", !state.useTiles || !state.tileLayer);
 }
 
 function selectReport(id, panToMarker) {
@@ -998,6 +2029,9 @@ function render(options = {}) {
   if (!reports.some((report) => report.id === state.selectedId)) state.selectedId = null;
   writeFiltersToUrl();
   renderSummary(reports);
+  renderMyPlaces();
+  renderMySituation();
+  renderIncidents(reports);
   renderHotspots(published);
   renderOperatorPulse(published);
   renderActiveFilters();
@@ -1006,32 +2040,85 @@ function render(options = {}) {
   if (options.fit) fitMap(reports, false);
 }
 
-async function shareCurrentView() {
+function currentSharePayload() {
+  const labels = filterLabels().map((item) => item.label);
+  const context = labels.length ? `выбранные фильтры: ${labels.join(", ")}` : "общая публичная карта";
   const url = window.location.href;
+  const text = [
+    `Где белые списки?: ${context}.`,
+    "Публичные модерированные отметки без точных адресов, телефонов и личных данных.",
+    url
+  ].join(" ");
+
+  return { context, text, url };
+}
+
+function updateShareDialog() {
+  const payload = currentSharePayload();
+  $("#shareText").value = payload.text;
+  $("#shareUrl").value = payload.url;
+}
+
+function shareCurrentView() {
+  updateShareDialog();
+  openDialog($("#shareDialog"));
+}
+
+async function copySharePayload(kind) {
+  const payload = currentSharePayload();
+  const button = kind === "url" ? $("#copyShareUrlButton") : $("#copyShareTextButton");
+  const original = button.textContent;
   try {
-    if (navigator.share) {
-      await navigator.share({ title: "WhiteS", text: "Карта доступности интернета", url });
-      return;
-    }
-    await navigator.clipboard.writeText(url);
-    $("#shareButton").textContent = "Скопировано";
+    await navigator.clipboard.writeText(kind === "url" ? payload.url : payload.text);
+    button.textContent = "Скопировано";
+    announce(kind === "url" ? "Ссылка скопирована" : "Текст скопирован");
   } catch {
-    $("#shareButton").textContent = "Ссылка в адресе";
+    button.textContent = "Не скопировано";
+    announce("Не удалось скопировать автоматически");
   }
 
   setTimeout(() => {
-    $("#shareButton").textContent = "Поделиться";
+    button.textContent = original;
   }, 1400);
+}
+
+async function sharePreparedView() {
+  const payload = currentSharePayload();
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: "Где белые списки?", text: payload.text, url: payload.url });
+      return;
+    }
+    await navigator.clipboard.writeText(payload.text);
+    $("#nativeShareButton").textContent = "Скопировано";
+  } catch {
+    $("#nativeShareButton").textContent = "Ссылка в поле";
+  }
+
+  setTimeout(() => {
+    $("#nativeShareButton").textContent = "Поделиться";
+  }, 1400);
+}
+
+function registerOfflineShell() {
+  if (!("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.register("sw.js").catch(() => {
+    // Offline shell is optional; the public list must keep working without it.
+  });
 }
 
 async function main() {
   await loadData();
   readFiltersFromUrl();
   readRuntimePreferences();
-  setupMap();
+  readUserContext();
   setupFilters();
-  setMobileView(window.matchMedia("(max-width: 720px)").matches ? "list" : "map");
-  render({ fit: true });
+  await loadContextHint();
+  const isMobile = window.matchMedia("(max-width: 720px)").matches;
+  if (!isMobile) await ensureMapReady({ forceFit: true });
+  await setMobileView(isMobile ? "list" : "map");
+  render({ fit: !isMobile });
+  registerOfflineShell();
 }
 
 main();

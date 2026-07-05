@@ -1,6 +1,6 @@
-# WhiteS roadmap
+# Где белые списки? roadmap
 
-WhiteS should become a practical public utility for people in Russia who face mobile internet shutdowns, whitelist-only mode, censorship, throttling, and random service outages.
+Где белые списки? should become a practical public utility for people in Russia who face mobile internet shutdowns, whitelist-only mode, censorship, throttling, and random service outages.
 
 The product should feel calm and useful, not performative. The core promise is simple: quickly understand what works nearby, what does not, how fresh the information is, and how to report safely without exposing yourself.
 
@@ -43,7 +43,7 @@ The useful logic to adapt:
 - SEO/content surface: city, region, operator, and problem pages bring users from search during crisis spikes.
 - Community rules/legal pages: privacy policy, user agreement, report rules, and fraud/safety warning build trust.
 
-What must be different for WhiteS:
+What must be different for Где белые списки?:
 
 - More sensitive threat model: location, identity, and political interpretation are risky.
 - Stronger moderation: false reports can cause harm and panic.
@@ -59,7 +59,7 @@ Goal: understand whether the outage is local, operator-specific, or widespread.
 
 Flow:
 
-1. Opens WhiteS.
+1. Opens "Где белые списки?"
 2. Sees nearby/selected region status without login.
 3. Filters by operator and network type.
 4. Checks freshness and confidence.
@@ -145,7 +145,7 @@ Success criteria:
 - No phone/email/name fields.
 - No public author metadata.
 - Warnings before comments and uploads.
-- Basic fraud warning: WhiteS does not sell access, ask for payment, require apps, or collect login/passwords.
+- Basic fraud warning: Где белые списки? does not sell access, ask for payment, require apps, or collect login/passwords.
 
 ### Freshness Over Completeness
 

@@ -6,9 +6,20 @@
 
 - MySQL-базу;
 - папку `platform/storage`;
+- текущий публичный `reports.json` перед деплоем или заменой данных;
 - `.env` без публикации в репозиторий;
 - список cron-задач;
 - текущую версию кода.
+
+## Быстрый backup публичного JSON
+
+Перед деплоем или ручной заменой live-данных сохраните текущий публичный снимок:
+
+```powershell
+.\scripts\backup-public-reports.ps1
+```
+
+Скрипт скачивает `https://kidai.website/whites/reports.json`, проверяет его через `validate-public-data.ps1` и `audit-public-data-safety.ps1`, затем сохраняет копию в `backups/public-lite/`. Папка `backups` исключена из git.
 
 ## Shared hosting Timeweb
 

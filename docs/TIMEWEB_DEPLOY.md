@@ -81,7 +81,7 @@ Add these cron tasks in Timeweb panel or over SSH:
 
 Replace `/home/<user>/<site-root>` with the real path from Timeweb.
 
-## WhiteS bootstrap
+## Где белые списки? bootstrap
 
 After the site opens, seed categories and the report form from your local machine:
 

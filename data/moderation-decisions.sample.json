@@ -1,0 +1,66 @@
+{
+  "decisions": [
+    {
+      "observation_id": "obs_20260704_120000_example1",
+      "decision": "merge_confirm",
+      "target_report_id": "demo-001"
+    },
+    {
+      "observation_id": "obs_20260704_121500_example2",
+      "decision": "merge_restored",
+      "target_report_id": "demo-001",
+      "last_restored_at": "2026-07-04T12:15:00+03:00",
+      "mark_restored": false,
+      "public_summary": ""
+    },
+    {
+      "observation_id": "obs_20260704_123000_example3",
+      "decision": "publish_report",
+      "moderated_report": {
+        "id": "manual-20260704-001",
+        "status": "published",
+        "region": "Москва",
+        "city_or_area": "ЮАО",
+        "operator": "МТС",
+        "network_type": "Мобильный интернет",
+        "problem_type": "Работает только белый список",
+        "incident_category": "whitelist-only",
+        "checked_services": ["Карты / навигация", "Такси"],
+        "checked_at": "2026-07-04T12:30:00+03:00",
+        "confidence": "Проверил сам",
+        "confirmation_count": 1,
+        "restoration_count": 0,
+        "freshness": "now",
+        "summary": "Карты и такси открывались нестабильно, банковское приложение работало.",
+        "approx_location": {
+          "lat": 55.62,
+          "lon": 37.61,
+          "precision": "district"
+        }
+      }
+    },
+    {
+      "observation_id": "obs_20260704_124500_example4",
+      "decision": "reject"
+    },
+    {
+      "observation_id": "obs_20260704_130000_complaint1",
+      "decision": "hide_report",
+      "target_report_id": "demo-001"
+    },
+    {
+      "observation_id": "obs_20260704_131500_complaint2",
+      "decision": "edit_report",
+      "target_report_id": "demo-002",
+      "public_patch": {
+        "summary": "Описание отредактировано модератором: персональные детали удалены.",
+        "city_or_area": "Краснодар",
+        "approx_location": {
+          "lat": 45.04,
+          "lon": 38.97,
+          "precision": "city"
+        }
+      }
+    }
+  ]
+}

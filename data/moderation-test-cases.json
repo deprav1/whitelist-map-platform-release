@@ -1,0 +1,199 @@
+{
+  "version": 1,
+  "updated_at": "2026-07-05",
+  "notes": "Internal moderation drills. All risky values are synthetic placeholders and must never be copied to public reports.",
+  "cases": [
+    {
+      "id": "mod-safe-new-001",
+      "kind": "problem",
+      "summary": "Район, оператор, тип проблемы, время проверки и сервисы указаны без личных деталей.",
+      "expected_decision": "publish_report",
+      "expected_priority": "normal",
+      "expected_risk_flags": []
+    },
+    {
+      "id": "mod-safe-restored-002",
+      "kind": "restored",
+      "summary": "Автор сообщает, что доступ восстановился в примерном районе.",
+      "expected_decision": "merge_restored",
+      "expected_priority": "normal",
+      "expected_risk_flags": []
+    },
+    {
+      "id": "mod-safe-confirm-003",
+      "kind": "confirm",
+      "summary": "Повторное подтверждение уже опубликованной проблемы без новых рискованных деталей.",
+      "expected_decision": "merge_confirm",
+      "expected_priority": "normal",
+      "expected_risk_flags": []
+    },
+    {
+      "id": "mod-complaint-personal-004",
+      "kind": "complaint",
+      "summary": "Жалоба говорит, что опубликованная запись раскрывает имя и контакт.",
+      "expected_decision": "hide_report",
+      "expected_priority": "first",
+      "expected_risk_flags": ["personal_data"]
+    },
+    {
+      "id": "mod-complaint-location-005",
+      "kind": "complaint",
+      "summary": "Жалоба указывает на точку около дома или личного маршрута.",
+      "expected_decision": "edit_report",
+      "expected_priority": "first",
+      "expected_risk_flags": ["exact_location"]
+    },
+    {
+      "id": "mod-complaint-danger-006",
+      "kind": "complaint",
+      "summary": "Жалоба описывает риск для человека или небольшой группы.",
+      "expected_decision": "hide_report",
+      "expected_priority": "first",
+      "expected_risk_flags": ["dangerous"]
+    },
+    {
+      "id": "mod-email-007",
+      "kind": "problem",
+      "summary": "Текст содержит тестовый email person@example.invalid.",
+      "expected_decision": "reject",
+      "expected_priority": "first",
+      "expected_risk_flags": ["email"]
+    },
+    {
+      "id": "mod-phone-008",
+      "kind": "problem",
+      "summary": "Текст содержит тестовый телефон +7 000 000-00-00.",
+      "expected_decision": "reject",
+      "expected_priority": "first",
+      "expected_risk_flags": ["phone"]
+    },
+    {
+      "id": "mod-ip-009",
+      "kind": "problem",
+      "summary": "Текст содержит тестовый IP 192.0.2.10.",
+      "expected_decision": "reject",
+      "expected_priority": "first",
+      "expected_risk_flags": ["ip_address"]
+    },
+    {
+      "id": "mod-coords-010",
+      "kind": "problem",
+      "summary": "Текст содержит точные координаты 55.000000, 37.000000.",
+      "expected_decision": "edit_report",
+      "expected_priority": "first",
+      "expected_risk_flags": ["precise_coordinates"]
+    },
+    {
+      "id": "mod-url-011",
+      "kind": "problem",
+      "summary": "Текст содержит тестовую ссылку https://example.invalid/private.",
+      "expected_decision": "reject",
+      "expected_priority": "first",
+      "expected_risk_flags": ["url"]
+    },
+    {
+      "id": "mod-address-012",
+      "kind": "problem",
+      "summary": "Текст содержит точный адресный маркер: дом, подъезд, квартира.",
+      "expected_decision": "edit_report",
+      "expected_priority": "first",
+      "expected_risk_flags": ["exact_address_marker"]
+    },
+    {
+      "id": "mod-workplace-013",
+      "kind": "problem",
+      "summary": "Текст раскрывает место работы или учебы вместо примерного района.",
+      "expected_decision": "edit_report",
+      "expected_priority": "first",
+      "expected_risk_flags": ["personal_data", "exact_location"]
+    },
+    {
+      "id": "mod-vpn-key-014",
+      "kind": "problem",
+      "summary": "Текст содержит тестовый плейсхолдер ключа или конфига: CONFIG-REDACTED-TEST.",
+      "expected_decision": "reject",
+      "expected_priority": "first",
+      "expected_risk_flags": ["vpn_proxy_or_key"]
+    },
+    {
+      "id": "mod-user-agent-015",
+      "kind": "problem",
+      "summary": "Текст содержит user-agent-like строку для диагностики.",
+      "expected_decision": "reject",
+      "expected_priority": "first",
+      "expected_risk_flags": ["user_agent_like"]
+    },
+    {
+      "id": "mod-spam-016",
+      "kind": "problem",
+      "summary": "Рекламный текст, промокод или мошеннический призыв.",
+      "expected_decision": "reject",
+      "expected_priority": "normal",
+      "expected_risk_flags": ["spam"]
+    },
+    {
+      "id": "mod-violence-017",
+      "kind": "problem",
+      "summary": "Текст призывает к травле, панике или насилию.",
+      "expected_decision": "reject",
+      "expected_priority": "first",
+      "expected_risk_flags": ["dangerous"]
+    },
+    {
+      "id": "mod-low-info-018",
+      "kind": "problem",
+      "summary": "Нет региона, оператора, времени проверки или типа проблемы.",
+      "expected_decision": "needs_more_context",
+      "expected_priority": "normal",
+      "expected_risk_flags": []
+    },
+    {
+      "id": "mod-duplicate-019",
+      "kind": "problem",
+      "summary": "Дубль опубликованной отметки без новой информации.",
+      "expected_decision": "merge_confirm",
+      "expected_priority": "normal",
+      "expected_risk_flags": ["duplicate"]
+    },
+    {
+      "id": "mod-conflict-020",
+      "kind": "problem",
+      "summary": "Свежее сообщение противоречит опубликованному восстановлению.",
+      "expected_decision": "needs_more_context",
+      "expected_priority": "normal",
+      "expected_risk_flags": ["conflicting_status"]
+    },
+    {
+      "id": "mod-outdated-021",
+      "kind": "complaint",
+      "summary": "Жалоба сообщает, что опубликованная отметка устарела.",
+      "expected_decision": "edit_report",
+      "expected_priority": "normal",
+      "expected_risk_flags": ["outdated"]
+    },
+    {
+      "id": "mod-wrong-category-022",
+      "kind": "complaint",
+      "summary": "Жалоба сообщает, что категория проблемы неверная.",
+      "expected_decision": "edit_report",
+      "expected_priority": "normal",
+      "expected_risk_flags": ["wrong_category"]
+    },
+    {
+      "id": "mod-public-patch-023",
+      "kind": "complaint",
+      "summary": "Опасную часть можно убрать, оставив район, оператора, время и безопасный summary.",
+      "expected_decision": "edit_report",
+      "expected_priority": "first",
+      "expected_risk_flags": ["personal_data"]
+    },
+    {
+      "id": "mod-no-public-value-024",
+      "kind": "problem",
+      "summary": "После удаления риска не остается полезного публичного факта.",
+      "expected_decision": "reject",
+      "expected_priority": "first",
+      "expected_risk_flags": ["personal_data", "exact_location"]
+    }
+  ]
+}

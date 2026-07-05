@@ -1,6 +1,6 @@
 # Database options
 
-WhiteS currently runs on Ushahidi Platform Release, so the database should be boring MySQL-compatible storage with support for spatial/geometry fields. Do not choose a PostgreSQL-only service unless the app is migrated away from Ushahidi.
+Где белые списки? currently runs on Ushahidi Platform Release, so the database should be boring MySQL-compatible storage with support for spatial/geometry fields. Do not choose a PostgreSQL-only service unless the app is migrated away from Ushahidi.
 
 ## Best default: Aiven free MySQL
 

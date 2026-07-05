@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <meta name="referrer" content="no-referrer">
-  <title>WhiteS - карта доступности интернета</title>
+  <title>Где белые списки? - карта доступности интернета</title>
   <meta name="description" content="Карта пользовательских отметок о доступности интернета, отключениях и режиме белого списка.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.9.4">
-  <link rel="stylesheet" href="styles.css?v=20260702-ux2">
+  <link rel="stylesheet" href="styles.css?v=20260705-offline3">
 </head>
 <body>
   <div class="app-shell">
     <div class="sr-only" id="liveRegion" aria-live="polite"></div>
     <header class="topbar">
       <div class="brand-lockup">
-        <span class="brand">WhiteS</span>
+        <span class="brand">Где белые списки?</span>
         <span class="tagline">Карта доступности интернета</span>
       </div>
       <div class="top-actions">
@@ -88,70 +88,132 @@
       <aside class="report-drawer" aria-label="Список отчетов">
         <section class="summary-panel">
           <div>
-            <span id="totalCount">0</span>
-            <strong>отчетов</strong>
+            <span id="activeIncidentCount">0</span>
+            <strong>активных</strong>
           </div>
           <div>
             <span id="freshCount">0</span>
             <strong>свежих</strong>
           </div>
           <div>
-            <span id="regionsCount">0</span>
-            <strong>регионов</strong>
+            <span id="restoredCount">0</span>
+            <strong>восстановл.</strong>
           </div>
           <div>
-            <span id="shutdownCount">0</span>
-            <strong>сбоев</strong>
+            <span id="totalCount">0</span>
+            <strong>отметок</strong>
           </div>
         </section>
 
         <section class="drawer-head">
           <div>
-            <h1>Что работает сейчас</h1>
-            <p id="updatedAt">обновление...</p>
-          </div>
-          <p class="safety-note">Точки примерные. Точные адреса, телефоны и личные данные не публикуются.</p>
-          <p class="source-note" id="sourceNote"></p>
+            <h1 id="summaryHeadline">Что работает сейчас</h1>
+          <p id="updatedAt">обновление...</p>
+        </div>
+        <p class="summary-lede" id="summaryLede">Сводка строится только по опубликованным модерацией отметкам.</p>
+        <p class="safety-note">Точки примерные. Точные адреса, телефоны и личные данные не публикуются.</p>
+        <div class="trust-cues" aria-label="Принципы доверия">
+          <span>Без регистрации</span>
+          <span>Премодерация</span>
+          <span>Неофициальные отметки</span>
+        </div>
+        <section class="data-state-panel" id="dataStatePanel" aria-label="Состояние данных">
+            <strong id="dataStateTitle">Данные загружены</strong>
+            <p class="source-note" id="sourceNote"></p>
+            <div class="state-actions" id="dataStateActions"></div>
+          </section>
           <div class="drawer-actions">
             <button class="primary-button" id="drawerReportButton" type="button">Сообщить о проблеме</button>
             <button class="ghost-button" id="aboutDataButton" type="button">О данных</button>
+            <a class="ghost-button link-button" href="faq.html">FAQ</a>
+            <a class="ghost-button link-button" href="rules.html">Правила</a>
+            <a class="ghost-button link-button" href="privacy.html">Приватность</a>
           </div>
         </section>
 
-        <section class="insights-panel" aria-label="Быстрый обзор ситуации">
+        <section class="my-situation-panel" aria-label="Ваша ситуация">
           <header class="section-title">
-            <h2>Сейчас заметнее всего</h2>
-            <button class="text-button" id="resetContextButton" type="button">все регионы</button>
+            <h2>Ваша ситуация</h2>
+            <span class="section-actions">
+              <button class="text-button" id="saveMyPlaceButton" type="button">сохранить место</button>
+              <button class="text-button" id="clearMySituationButton" type="button">сбросить</button>
+            </span>
           </header>
-          <div class="hotspots-list" id="hotspotsList"></div>
+          <div class="my-situation-controls">
+            <label>
+              <span>Регион</span>
+              <select id="myRegionSelect"></select>
+            </label>
+            <label>
+              <span>Оператор</span>
+              <select id="myOperatorSelect"></select>
+            </label>
+          </div>
+          <div class="my-places" id="myPlacesList" aria-label="Мои места"></div>
+          <p class="context-hint" id="myContextHint"></p>
+          <div class="my-situation-card" id="mySituationCard"></div>
+          <div class="my-situation-actions">
+            <button class="ghost-button" id="mySituationFilterButton" type="button">Показать в списке</button>
+            <button class="ghost-button" id="mySituationConfirmButton" type="button">У меня тоже</button>
+            <button class="ghost-button" id="mySituationRestoredButton" type="button">Восстановилось</button>
+            <button class="primary-button" id="mySituationReportButton" type="button">Сообщить</button>
+          </div>
         </section>
 
-        <section class="operator-panel" aria-label="Сводка по операторам">
+        <section class="overview-panel" aria-label="Сводка">
           <header class="section-title">
-            <h2>Операторы</h2>
+            <h2>Сводка</h2>
+            <span class="section-note">сгруппировано автоматически</span>
           </header>
+          <h3>Инциденты</h3>
+          <div class="incident-rollups" id="incidentRollups"></div>
+          <div class="summary-subhead">
+            <h3>Регионы</h3>
+            <button class="text-button" id="resetContextButton" type="button">все регионы</button>
+          </div>
+          <div class="hotspots-list" id="hotspotsList"></div>
+          <h3>Операторы</h3>
           <div class="operator-pulse" id="operatorPulse"></div>
         </section>
 
-        <section class="active-filters" id="activeFilters" aria-label="Активные фильтры"></section>
+        <section class="active-filters" id="activeFilters" aria-label="Активные фильтры">
+          <button class="primary-button active-report-button" id="stickyReportButton" type="button">Сообщить</button>
+        </section>
+        <section class="low-bandwidth-panel" id="lowBandwidthPanel" aria-label="Режим слабого интернета">
+          <strong>Список работает без внешних тайлов</strong>
+          <p>Карта может грузиться медленно. Все ключевые отметки, сводка, фильтры и форма доступны здесь.</p>
+          <div class="low-bandwidth-actions">
+            <button class="text-button" id="openMapFromListButton" type="button">Открыть карту</button>
+            <button class="text-button" id="lowBandwidthReportButton" type="button">Сообщить</button>
+            <button class="text-button" id="lowBandwidthShareButton" type="button">Поделиться</button>
+          </div>
+        </section>
         <section class="reports-list" id="reportsList" aria-label="Последние отметки"></section>
       </aside>
     </main>
   </div>
 
   <template id="reportTemplate">
-    <button class="report-row" type="button">
-      <span class="row-status"></span>
-      <span class="row-content">
-        <span class="row-title-line">
-          <span class="row-title"></span>
-          <span class="row-status-label"></span>
+    <article class="report-item">
+      <button class="report-row" type="button">
+        <span class="row-status"></span>
+        <span class="row-content">
+          <span class="row-title-line">
+            <span class="row-title"></span>
+            <span class="row-status-label"></span>
+          </span>
+          <span class="row-meta"></span>
+          <span class="row-summary"></span>
+          <span class="row-tags"></span>
         </span>
-        <span class="row-meta"></span>
-        <span class="row-summary"></span>
-        <span class="row-tags"></span>
-      </span>
-    </button>
+      </button>
+      <div class="report-actions" aria-label="Действия по отметке">
+        <button class="text-button report-action" type="button" data-action="map">Показать на карте</button>
+        <button class="text-button report-action" type="button" data-action="confirm">У меня тоже</button>
+        <button class="text-button report-action" type="button" data-action="restored">Восстановилось</button>
+        <button class="text-button report-action" type="button" data-action="complaint">Пожаловаться</button>
+      </div>
+    </article>
   </template>
 
   <dialog class="modal" id="reportDialog" aria-labelledby="reportDialogTitle">
@@ -159,7 +221,7 @@
       <header class="modal-head">
         <div>
           <h2 id="reportDialogTitle">Сообщить наблюдение</h2>
-          <p>Форма пока готовит безопасный черновик и не отправляет данные автоматически.</p>
+          <p id="reportDialogIntro">Если сервер приема доступен, запись уйдет в премодерацию. Черновик всегда остается ниже.</p>
         </div>
         <button class="icon-button" value="close" type="submit" aria-label="Закрыть">×</button>
       </header>
@@ -169,6 +231,7 @@
       </section>
 
       <div class="report-form-grid">
+        <input id="draftWebsite" name="website" type="hidden" autocomplete="off">
         <label>
           <span>Город или район</span>
           <input id="draftArea" name="area" placeholder="Например: Москва, ЮАО">
@@ -211,22 +274,44 @@
             <option>Не уверен</option>
           </select>
         </label>
+        <label class="wide-field complaint-field" id="draftComplaintReasonWrap" hidden>
+          <span>Причина жалобы</span>
+          <select id="draftComplaintReason" name="complaint_reason">
+            <option value="personal_data">Персональные данные</option>
+            <option value="exact_location">Точный адрес или опасная геоточка</option>
+            <option value="dangerous">Риск для человека</option>
+            <option value="wrong">Ошибка в отметке</option>
+            <option value="duplicate">Дубль</option>
+            <option value="outdated">Устарело</option>
+            <option value="other">Другое</option>
+          </select>
+        </label>
         <label class="wide-field">
           <span>Короткий комментарий</span>
+          <small class="risk-hint" id="draftRiskHint" role="status"></small>
           <textarea id="draftSummary" name="summary" rows="4" maxlength="500" placeholder="Что именно открывалось или не открывалось. Без личных данных."></textarea>
           <small id="draftSummaryCounter">0 / 500</small>
         </label>
       </div>
 
       <ul class="privacy-checklist" aria-label="Проверка безопасности перед отправкой">
-        <li>Пишите район или город, а не точный адрес.</li>
-        <li>Описывайте проверенные сервисы, а не личные действия.</li>
+        <li>Пишите район или город, а не точный адрес или GPS.</li>
+        <li>Не добавляйте ФИО, телефон, email, аккаунты, место работы или учебы.</li>
+        <li>Не отправляйте приватные ссылки, VPN/proxy-инструкции, ключи или конфиги.</li>
         <li>Перед публикацией запись должна пройти модерацию.</li>
       </ul>
 
+      <label class="safety-confirm">
+        <input id="safetyConfirm" name="safety_confirm" type="checkbox">
+        <span>Я проверил: в сообщении нет личных данных, точного адреса, GPS, приватных ссылок и инструкций, которые могут навредить людям.</span>
+      </label>
+
+      <p class="submit-status" id="submitStatus" role="status"></p>
+
       <div class="modal-actions">
-        <button class="ghost-button" id="copyDraftButton" type="button">Скопировать черновик</button>
-        <button class="primary-button" value="close" type="submit">Готово</button>
+        <button class="ghost-button" id="copyDraftButton" type="button">Скопировать безопасный черновик</button>
+        <button class="primary-button" id="sendDraftButton" type="button">Отправить на модерацию</button>
+        <button class="ghost-button" value="close" type="submit">Закрыть</button>
       </div>
       <textarea class="draft-output" id="draftOutput" readonly aria-label="Черновик отчета"></textarea>
     </form>
@@ -237,31 +322,89 @@
       <header class="modal-head">
         <div>
           <h2 id="aboutDialogTitle">О данных и безопасности</h2>
-          <p>WhiteS показывает пользовательские отметки после модерации.</p>
+          <p>Где белые списки? показывает пользовательские отметки после модерации.</p>
         </div>
         <button class="icon-button" value="close" type="submit" aria-label="Закрыть">×</button>
       </header>
+      <div class="info-tabs" role="tablist" aria-label="Разделы о данных Где белые списки?">
+        <button class="info-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="infoData" data-info-tab="data">Данные</button>
+        <button class="info-tab" type="button" role="tab" aria-selected="false" aria-controls="infoRules" data-info-tab="rules">Правила</button>
+        <button class="info-tab" type="button" role="tab" aria-selected="false" aria-controls="infoPrivacy" data-info-tab="privacy">Приватность</button>
+        <button class="info-tab" type="button" role="tab" aria-selected="false" aria-controls="infoSafety" data-info-tab="safety">Безопасность</button>
+      </div>
       <section class="info-grid">
-        <article>
+        <article class="info-page is-active" id="infoData" role="tabpanel" data-info-page="data">
           <h3>Что видно публично</h3>
           <p>Регион, примерный район, оператор, тип проблемы, время проверки, уверенность и безопасный краткий комментарий.</p>
         </article>
-        <article>
+        <article class="info-page is-active" data-info-page="data">
+          <h3>Как читать карту</h3>
+          <p>Где белые списки? не официальный источник. Смотрите свежесть, уверенность, подтверждения, восстановления и статус инцидента.</p>
+        </article>
+        <article class="info-page" id="infoRules" role="tabpanel" data-info-page="rules" hidden>
+          <h3>Что писать в отметке</h3>
+          <p>Примерный район, оператор, тип сети, что именно не работает или восстановилось, проверенные сервисы, время и уровень уверенности.</p>
+        </article>
+        <article class="info-page" data-info-page="rules" hidden>
           <h3>Что не нужно отправлять</h3>
           <p>ФИО, телефон, email, точный адрес, место работы, аккаунты, скриншоты профилей и личные маршруты.</p>
         </article>
-        <article>
-          <h3>Почему карта может быть без тайлов</h3>
-          <p>На мобильном карта открывается без внешних тайлов по умолчанию: список и точки работают, а лишние запросы к картографическому сервису не уходят.</p>
+        <article class="info-page" id="infoPrivacy" role="tabpanel" data-info-page="privacy" hidden>
+          <h3>Минимум данных</h3>
+          <p>Не нужен аккаунт, телефон, email или точная геолокация. Новые наблюдения попадают в pending-очередь и не видны публично до модерации.</p>
+        </article>
+        <article class="info-page" data-info-page="privacy" hidden>
+          <h3>IP не публичный идентификатор</h3>
+          <p>IP не показывается пользователю, не попадает в публичный reports.json и не используется как публичный признак автора.</p>
+        </article>
+        <article class="info-page" id="infoSafety" role="tabpanel" data-info-page="safety" hidden>
+          <h3>Где белые списки? не просит лишнего</h3>
+          <p>Проект не просит скачать приложение, оплатить доступ, прислать пароль, код из SMS, документы или банковские данные.</p>
+        </article>
+        <article class="info-page" data-info-page="safety" hidden>
+          <h3>Если отчет опасный</h3>
+          <p>Нажмите “Пожаловаться” у карточки. Отметка с персональными данными, точным адресом или риском для человека должна быть скрыта или отредактирована.</p>
         </article>
       </section>
       <div class="modal-actions">
+        <a class="ghost-button link-button" href="faq.html">Открыть FAQ</a>
+        <a class="ghost-button link-button" href="rules.html">Правила</a>
+        <a class="ghost-button link-button" href="privacy.html">Приватность</a>
         <button class="primary-button" value="close" type="submit">Понятно</button>
       </div>
     </form>
   </dialog>
 
-  <script src="vendor/leaflet/leaflet.js?v=1.9.4"></script>
-  <script src="app.js?v=20260702-ux2"></script>
+  <dialog class="modal" id="shareDialog" aria-labelledby="shareDialogTitle">
+    <form class="modal-body" method="dialog">
+      <header class="modal-head">
+        <div>
+          <h2 id="shareDialogTitle">Поделиться безопасно</h2>
+          <p>Ссылка передает только публичный вид карты и фильтры. Локальные “мои места” не попадают в ссылку.</p>
+        </div>
+        <button class="icon-button" value="close" type="submit" aria-label="Закрыть">×</button>
+      </header>
+      <section class="modal-warning">
+        Не добавляйте к ссылке точные адреса, телефоны, аккаунты, приватные ссылки, VPN/proxy-инструкции, ключи или конфиги.
+      </section>
+      <label class="share-field">
+        <span>Текст для отправки</span>
+        <textarea id="shareText" rows="5" readonly></textarea>
+      </label>
+      <label class="share-field">
+        <span>Ссылка</span>
+        <input id="shareUrl" type="text" readonly>
+      </label>
+      <footer class="modal-actions">
+        <button class="ghost-button" id="copyShareTextButton" type="button">Копировать текст</button>
+        <button class="ghost-button" id="copyShareUrlButton" type="button">Копировать ссылку</button>
+        <button class="primary-button" id="nativeShareButton" type="button">Поделиться</button>
+        <button class="ghost-button" value="close" type="submit">Закрыть</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <script id="leafletScriptConfig" data-src="vendor/leaflet/leaflet.js?v=1.9.4"></script>
+  <script src="app.js?v=20260705-offline3"></script>
 </body>
 </html>

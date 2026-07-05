@@ -1,7 +1,13 @@
 {
   "updated_at": "2026-07-02T18:50:00+03:00",
-  "source": "WhiteS demo moderated reports",
+  "source": "Где белые списки? демо-отметки после модерации",
   "disclaimer": "Пользовательские отметки, не официальные данные. Проверяйте свежесть и уровень уверенности.",
+  "export_manifest": {
+    "schema_version": "1.1",
+    "record_count": 10,
+    "generated_at": "2026-07-02T18:50:00+03:00",
+    "generated_from_moderation_revision": "demo-20260702-1850"
+  },
   "reports": [
     {
       "id": "demo-001",
@@ -80,7 +86,7 @@
       "network_type": "Домашний интернет",
       "problem_type": "Сильное замедление",
       "incident_category": "partial-connectivity",
-      "checked_services": ["YouTube", "Зарубежные сайты", "VPN / прокси-категория"],
+      "checked_services": ["YouTube", "Зарубежные сайты", "Зарубежные сервисы"],
       "checked_at": "2026-07-02T16:55:00+03:00",
       "confidence": "Видел массовые жалобы",
       "confirmation_count": 12,

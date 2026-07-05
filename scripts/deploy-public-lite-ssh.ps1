@@ -13,7 +13,9 @@ param(
 
     [string]$KeyPath = "$env:USERPROFILE\.ssh\whites_timeweb_ed25519",
 
-    [string]$PackagePath = "tmp\whites-public-lite.zip"
+    [string]$PackagePath = "tmp\whites-public-lite.zip",
+
+    [switch]$SkipStaleCleanup
 )
 
 Set-StrictMode -Version 2.0
@@ -34,6 +36,21 @@ if (-not (Test-Path -LiteralPath $KeyPath)) {
 $PackageFullPath = Join-Path $RepoRoot $PackagePath
 $Remote = "$UserName@$HostName"
 $RemoteZip = "$RemotePublicHtml/whites-public-lite.zip"
+$StaleRelativePaths = @(
+    "admin",
+    "icons",
+    "api/_bootstrap.php",
+    "api/complaint.php",
+    "api/confirm.php",
+    "api/health.php",
+    "api/og.php",
+    "api/submit.php",
+    "manifest.json",
+    "og-image.png",
+    "og-image.svg",
+    "share.php",
+    "sitemap.xml"
+)
 
 Write-Host "Building package..."
 & $Packager -OutputZip $PackagePath
@@ -45,6 +62,34 @@ if (-not (Test-Path -LiteralPath $PackageFullPath)) {
 Write-Host ""
 Write-Host "Checking remote directory..."
 ssh -i $KeyPath -p $Port $Remote "mkdir -p '$RemotePublicHtml' && test -d '$RemotePublicHtml'"
+
+if (-not $SkipStaleCleanup) {
+    Write-Host ""
+    Write-Host "Cleaning stale public-lite files..."
+    $StalePathList = $StaleRelativePaths -join " "
+    $CleanupCommand = @"
+set -eu
+cd '$RemotePublicHtml'
+case "`$(pwd)" in
+  '$RemotePublicHtml') ;;
+  *) echo 'Unexpected remote cwd:' "`$(pwd)"; exit 1 ;;
+esac
+existing=""
+for p in $StalePathList; do
+  if [ -e "`$p" ]; then existing="`$existing `$p"; fi
+done
+if [ -n "`$existing" ]; then
+  backup_dir="`$HOME/whites-stale-backups/`$(date +%Y%m%d-%H%M%S)-`$(basename '$RemotePublicHtml')"
+  mkdir -p "`$backup_dir"
+  tar -czf "`$backup_dir/stale-public-files.tar.gz" `$existing
+  rm -rf `$existing
+  echo "Cleaned stale files. Backup: `$backup_dir/stale-public-files.tar.gz"
+else
+  echo "No stale files found."
+fi
+"@
+    ssh -i $KeyPath -p $Port $Remote $CleanupCommand
+}
 
 Write-Host ""
 Write-Host "Uploading package to ${Remote}:$RemoteZip"
