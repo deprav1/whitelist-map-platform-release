@@ -126,6 +126,13 @@ const precisionRadius = {
 const dataSources = ["reports.json", "data/public-reports.json", "reports.sample.json"];
 const cacheKey = "whites:last-public-data";
 const noTilesKey = "whites:no-tiles";
+const analyticsEventNames = new Set([
+  "share_clicked",
+  "confirm_clicked",
+  "report_submitted",
+  "deeplink_open",
+  "region_page_view"
+]);
 
 const searchAliases = {
   спб: "санкт-петербург питер петербург",
@@ -173,6 +180,25 @@ function defaultFilters() {
 function announce(message) {
   const liveRegion = $("#liveRegion");
   if (liveRegion) liveRegion.textContent = message;
+}
+
+function track(eventName) {
+  if (!analyticsEventNames.has(eventName)) return;
+  try {
+    const body = JSON.stringify({ event: eventName });
+    fetch("api/event.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body,
+      credentials: "omit",
+      keepalive: body.length < 1024,
+    }).catch(() => {});
+  } catch {
+    // Analytics must never affect the emergency UX.
+  }
 }
 
 const CONFIRMED_STORAGE_KEY = "whites:confirmed";
@@ -224,6 +250,7 @@ async function confirmReport(reportId, buttonEl) {
   if (!reportId || hasConfirmed(reportId)) return;
   const report = findReportById(reportId);
   if (!report) return;
+  track("confirm_clicked");
 
   // Оптимистично: инкремент и запоминание устройства до сетевого ответа.
   rememberConfirmed(reportId);
@@ -466,11 +493,15 @@ function scrollReportRowIntoView(reportId) {
 // Параметры передаём из main() — render() успевает переписать URL и стереть их.
 function openDeepLinkTargets(params) {
   const regionParam = params.get("region");
+  let trackedDeepLink = false;
   if (regionParam) {
     const target = publishedReports().find(
       (r) => regionSlug(r.region) === regionParam || normalizeText(r.region) === normalizeText(regionParam)
     );
     if (target && !state.filters.search) {
+      track("deeplink_open");
+      track("region_page_view");
+      trackedDeepLink = true;
       state.filters.search = target.region;
       hydrateSearchFromUrlEarly();
       syncFilterControls();
@@ -480,6 +511,7 @@ function openDeepLinkTargets(params) {
 
   const reportParam = params.get("report");
   if (reportParam && publishedReports().some((r) => r.id === reportParam)) {
+    if (!trackedDeepLink) track("deeplink_open");
     setMobileView("list");
     // renderList() добавляет строки в requestAnimationFrame — выбираем отметку
     // после этого кадра, иначе строка ещё не в DOM и не получит is-active.
@@ -1056,6 +1088,7 @@ async function submitReportToModeration() {
     setFormStatus(status, `Отчет принят в премодерацию. Номер: ${response.id}.`, "success");
     button.textContent = "Отчет отправлен";
     announce("Отчет отправлен в премодерацию");
+    track("report_submitted");
   } catch (error) {
     button.disabled = false;
     button.textContent = "Отправить";
@@ -1787,6 +1820,7 @@ function render(options = {}) {
 }
 
 async function shareCurrentView() {
+  track("share_clicked");
   // Если выбрана конкретная отметка — делимся постоянной ссылкой на неё и
   // точным текстом инцидента (это виральная единица для мессенджеров).
   const selected = state.selectedId

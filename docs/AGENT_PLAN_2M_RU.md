@@ -41,7 +41,7 @@
 Практический порядок ближайших P0:
 
 1. Агрегация confirmations в публичный экспорт. Статус 2026-07-06: выполнено и задеплоено; regression test добавлен.
-2. `api/event.php` или эквивалентная cookieless SQLite-аналитика.
+2. `api/event.php` или эквивалентная cookieless SQLite-аналитика. Статус 2026-07-06: выполнено; `events_daily` хранит только `day/event/count/updated_at`.
 3. Мобильная форма/первый экран/list clarity gate перед новым трафиком.
 4. Шаблон и safety spec региональной страницы.
 5. Генератор `/r/<region-slug>/` + sitemap + JSON-LD (`WebPage`/`Dataset`/`ItemList`, не `SpecialAnnouncement` как DoD-цель).

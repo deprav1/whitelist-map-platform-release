@@ -19,6 +19,7 @@ function runPhpTestsIfAvailable() {
 
   const tests = [
     path.join(__dirname, 'php', 'admin_export_confirmation_test.php'),
+    path.join(__dirname, 'php', 'event_counter_test.php'),
   ];
 
   for (const testPath of tests) {

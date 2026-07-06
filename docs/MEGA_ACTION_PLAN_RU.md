@@ -112,3 +112,9 @@
   - Regression cleanup: стабилизированы flaky Playwright-проверки hover marker и spam click.
   - Проверки: public-data validation, JS syntax, server PHP syntax, PHP regression test, `npm test` -> `108 passed`, package, live smoke.
   - Следующий P0: `Privacy-safe analytics gate`.
+- 2026-07-06: выполнен P0-slice `Privacy-safe analytics gate`.
+  - Код: `public-lite/api/event.php`, `public-lite/api/_bootstrap.php`, `public-lite/admin/index.php`, `public-lite/app.js`.
+  - Данные: таблица `events_daily(day,event,count,updated_at)`; только allowlist событий.
+  - Privacy: не пишутся cookies, IP, user-agent, user id, referrer, URL, path или payload страницы.
+  - Тесты: `tests/php/event_counter_test.php`, `T4.10` на allowlisted frontend events.
+  - Следующий P0: `Mobile/list clarity gate`.

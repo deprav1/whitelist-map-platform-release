@@ -102,5 +102,5 @@ E2E 106/106, Этап 0 закрыт.
 
 - **Фаза A — выполнена и в проде** (v14+): индикатор доверия, 2×2 quick-filters, схематичная карта.
 - **Фаза B — выполнена и в проде** (v17): `?report=`/`?region=` deep-links; отчёт-зависимый шеринг; динамический `api/og.php` (main/region/report, GD PNG, fallback на статику); `share.php` + rewrite отдаёт crawler'у контекстные OG-мета; нудж «Поделиться» после подтверждения.
-- **Дальше — Фаза C (SEO intent capture):** сначала confirmation aggregation и privacy-safe analytics, затем пререндер-страницы `/r/<region>/` из `reports.json`, `WebPage`/`Dataset`/`ItemList` JSON-LD на них, расширение `sitemap.xml`.
-- **Кросс-задача:** приватная аналитика (события `share_clicked`/`confirm_clicked`/…) — чтобы измерять эффект A/B.
+- **Дальше — Фаза C (SEO intent capture):** confirmation aggregation и privacy-safe analytics закрыты; следующий gate — mobile/list clarity, затем пререндер-страницы `/r/<region>/` из `reports.json`, `WebPage`/`Dataset`/`ItemList` JSON-LD на них, расширение `sitemap.xml`.
+- **Кросс-задача:** приватная аналитика выполнена через `api/event.php` + `events_daily` (`day/event/count/updated_at`) без cookies, IP, user-agent и user id.

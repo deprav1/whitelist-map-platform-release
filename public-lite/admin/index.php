@@ -368,6 +368,13 @@ function admin_close_complaint(PDO $pdo, array $data): void
     admin_flash('Жалоба закрыта.', 'success');
 }
 
+function admin_product_events(PDO $pdo): array
+{
+    return $pdo
+        ->query("SELECT day, event, count, updated_at FROM events_daily ORDER BY day DESC, event ASC LIMIT 100")
+        ->fetchAll();
+}
+
 $expectedToken = admin_expected_token();
 $authError = '';
 
@@ -417,6 +424,7 @@ $pdo = $isAuthenticated ? whites_db() : null;
 $submissions = $pdo ? $pdo->query("SELECT * FROM submissions WHERE status = 'pending_review' ORDER BY created_at DESC LIMIT 50")->fetchAll() : [];
 $complaints = $pdo ? $pdo->query("SELECT * FROM complaints WHERE status = 'open' ORDER BY created_at DESC LIMIT 50")->fetchAll() : [];
 $events = $pdo ? $pdo->query("SELECT * FROM moderation_events ORDER BY created_at DESC LIMIT 20")->fetchAll() : [];
+$productEvents = $pdo ? admin_product_events($pdo) : [];
 
 ?>
 <!doctype html>
@@ -457,6 +465,11 @@ $events = $pdo ? $pdo->query("SELECT * FROM moderation_events ORDER BY created_a
     .flash.error { border-color: rgba(239,68,68,.65); color: #fecaca; }
     .empty { padding: 16px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); }
     .event { padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 520px; }
+    th, td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+    th { color: #dbe3ef; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    td:last-child, th:last-child { text-align: right; }
     @media (max-width: 760px) { .shell { padding: 16px; } .grid, .form-grid { grid-template-columns: 1fr; } .top { align-items: flex-start; flex-direction: column; } }
   </style>
 </head>
@@ -504,6 +517,35 @@ $events = $pdo ? $pdo->query("SELECT * FROM moderation_events ORDER BY created_a
         </form>
         <a href="../reports.json" target="_blank" rel="noopener">Открыть public JSON</a>
       </section>
+
+      <h2>События продукта</h2>
+      <p class="muted">Агрегаты по дням: только event/day/count. Без cookies, IP, user-agent, user id, referrer и URL.</p>
+      <?php if (!$productEvents): ?>
+        <p class="empty">Событий пока нет.</p>
+      <?php else: ?>
+        <section class="card table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>День</th>
+                <th>Событие</th>
+                <th>Обновлено</th>
+                <th>Счётчик</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($productEvents as $event): ?>
+                <tr>
+                  <td><?= admin_h($event['day']) ?></td>
+                  <td><?= admin_h($event['event']) ?></td>
+                  <td><?= admin_h($event['updated_at']) ?></td>
+                  <td><?= admin_h($event['count']) ?></td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </section>
+      <?php endif; ?>
 
       <h2>Очередь отчетов (<?= count($submissions) ?>)</h2>
       <?php if (!$submissions): ?>

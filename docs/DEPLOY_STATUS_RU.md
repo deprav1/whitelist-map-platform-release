@@ -2,6 +2,21 @@
 
 Дата: 2026-07-06
 
+## Privacy-safe analytics gate
+
+- Выполнен и задеплоен P0-slice `Privacy-safe analytics gate`.
+- Добавлен `public-lite/api/event.php`: POST-only endpoint для allowlist событий `share_clicked`, `confirm_clicked`, `report_submitted`, `deeplink_open`, `region_page_view`.
+- SQLite schema version: `3`; новая таблица `events_daily(day,event,count,updated_at)`.
+- Privacy gate: в таблицу не пишутся cookies, IP, user-agent, user id, referrer, URL/path или payload страницы.
+- `/admin/` показывает агрегированную таблицу “События продукта”.
+- Версия фронтенда в HTML: `app.js?v=20260706-analytics`.
+- Версия Service Worker cache: `whites-v18`.
+- Проверки: `node --check public-lite\app.js`, `node --check public-lite\sw.js`, `node --check tests\run_tests.js`, `.\scripts\validate-public-data.ps1`, `npm test` -> `109 passed`, `.\scripts\package-public-lite.ps1`.
+- Серверный PHP 8.2: `php -l` для `_bootstrap.php`, `event.php`, `admin/index.php`; regression tests в `/tmp` -> `admin_export_confirmation_test OK`, `event_counter_test OK`.
+- Деплой выполнен на `https://kidai.website/whites/` и в серверный каталог будущего `whites.kidai.website`.
+- Live-check: главная `200`, `sw.js` содержит `whites-v18`, `api/health.php` -> `schema_version: 3`, `api/event.php` GET -> `405`, POST `share_clicked` -> `201` и `count`, JSON/PHP endpoints с `X-Robots-Tag: noindex, noarchive`.
+- `Resolve-DnsName whites.kidai.website` все еще не готов.
+
 ## Mega-plan + confirmation aggregation slice
 
 - Добавлен исполняемый mega-plan: `docs/MEGA_ACTION_PLAN_RU.md`.

@@ -1,6 +1,6 @@
 # Текущий статус WhiteS
 
-Дата чекпоинта: 2026-07-03.
+Дата чекпоинта: 2026-07-06.
 
 ## Публичная версия
 
@@ -47,6 +47,7 @@ https://whites.kidai.website/
 - UX-упрощение после комиссии скептиков: честный текст премодерации, один главный CTA, список первым на мобильном, резервный текст формы спрятан под раскрывающийся блок.
 - Подтверждения «Я тоже это вижу» (роадмап 1.3): кнопка на карточках и в popup, оптимистичный счётчик «N подтвердили», один голос на устройство (localStorage + бэкенд-дедуп `api/confirm.php`).
 - Агрегация подтверждений в public export: при пересборке админкой `reports.json` получает базовый `confirmation_count` из `public_reports` плюс уникальные backend-подтверждения из `confirmations`.
+- Privacy-safe analytics gate: `api/event.php` пишет только агрегаты `day/event/count` в `events_daily`; без cookies, IP, user-agent, user id, referrer и URL; `/admin/` показывает простую таблицу событий.
 - Исполняемый mega-plan ведется в `docs/MEGA_ACTION_PLAN_RU.md`; текущий P0-порядок: confirmation export -> privacy-safe analytics -> mobile/list clarity -> regional spec -> regional generator.
 
 ## Деплой
@@ -88,7 +89,7 @@ node --check public-lite\app.js
 - Создать субдомен `whites.kidai.website` в панели Timeweb.
 - Подключить SSL для субдомена.
 - Улучшить модераторскую админку: поиск, фильтры, быстрые координаты по городу, бэкапы перед экспортом.
-- Добавить privacy-safe аналитику событий без cookies, IP, UA и user id.
+- Провести mobile/list clarity gate: 320/390/1440, CTA, warning, карточки, active filters, без horizontal overflow.
 - Добавить группировку отчетов в инциденты.
 - Подготовить экспорт реальных модерированных данных из Ushahidi в `reports.json`.
 - Добавить страницу правил, приватности и FAQ в публичную карту.

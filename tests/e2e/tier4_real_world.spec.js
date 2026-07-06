@@ -377,4 +377,33 @@ test.describe('Tier 4: Real-World Workload (6 Test Cases)', () => {
     expect(shared.url).toContain('?report=report-002');
     expect(shared.text).toContain('WhiteS');
   });
+
+  // ==========================================
+  // T4.10: Privacy-safe analytics events
+  // ==========================================
+  test('T4.10: privacy-safe analytics sends only allowlisted event names', async ({ page }) => {
+    const tracked = [];
+    await page.route('**/api/event.php', async (route) => {
+      const data = route.request().postDataJSON();
+      tracked.push(data.event);
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      });
+    });
+
+    await page.goto(`/?region=${encodeURIComponent('москва')}`);
+    await expect.poll(() => tracked).toContain('deeplink_open');
+    await expect.poll(() => tracked).toContain('region_page_view');
+
+    await page.locator('#shareButton').click();
+    await expect.poll(() => tracked).toContain('share_clicked');
+
+    await page.locator('.reports-list .confirm-button').first().click();
+    await expect.poll(() => tracked).toContain('confirm_clicked');
+
+    const allowed = ['share_clicked', 'confirm_clicked', 'report_submitted', 'deeplink_open', 'region_page_view'];
+    expect(tracked.every((eventName) => allowed.includes(eventName))).toBe(true);
+  });
 });

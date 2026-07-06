@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 const WHITES_MAX_BODY_BYTES = 32768;
-const WHITES_SCHEMA_VERSION = 2;
+const WHITES_SCHEMA_VERSION = 3;
 
 function whites_json(array $payload, int $status = 200): void
 {
@@ -164,11 +164,71 @@ function whites_init_schema(PDO $pdo): void
         )
     ");
 
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS events_daily (
+            day TEXT NOT NULL,
+            event TEXT NOT NULL,
+            count INTEGER NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY(day, event)
+        )
+    ");
+
     $pdo->exec('CREATE INDEX IF NOT EXISTS idx_submissions_status_created ON submissions(status, created_at)');
     $pdo->exec('CREATE INDEX IF NOT EXISTS idx_complaints_status_created ON complaints(status, created_at)');
     $pdo->exec('CREATE INDEX IF NOT EXISTS idx_complaints_report_id ON complaints(report_id)');
     $pdo->exec('CREATE INDEX IF NOT EXISTS idx_confirmations_report_id ON confirmations(report_id)');
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_events_daily_day ON events_daily(day)');
     $pdo->exec('PRAGMA user_version = ' . WHITES_SCHEMA_VERSION);
+}
+
+function whites_allowed_events(): array
+{
+    return [
+        'share_clicked',
+        'confirm_clicked',
+        'report_submitted',
+        'deeplink_open',
+        'region_page_view',
+    ];
+}
+
+function whites_is_allowed_event(string $event): bool
+{
+    return in_array($event, whites_allowed_events(), true);
+}
+
+function whites_record_event(PDO $pdo, string $event, ?string $day = null): int
+{
+    if (!whites_is_allowed_event($event)) {
+        throw new InvalidArgumentException('Event is not allowlisted.');
+    }
+
+    $eventDay = $day ?: gmdate('Y-m-d');
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $eventDay) !== 1) {
+        throw new InvalidArgumentException('Event day must be YYYY-MM-DD.');
+    }
+
+    $stmt = $pdo->prepare("
+        INSERT INTO events_daily (day, event, count, updated_at)
+        VALUES (:day, :event, 1, :updated_at)
+        ON CONFLICT(day, event) DO UPDATE SET
+            count = count + 1,
+            updated_at = excluded.updated_at
+    ");
+    $stmt->execute([
+        ':day' => $eventDay,
+        ':event' => $event,
+        ':updated_at' => whites_now(),
+    ]);
+
+    $countStmt = $pdo->prepare('SELECT count FROM events_daily WHERE day = :day AND event = :event');
+    $countStmt->execute([
+        ':day' => $eventDay,
+        ':event' => $event,
+    ]);
+
+    return (int)$countStmt->fetchColumn();
 }
 
 function whites_request_data(): array
